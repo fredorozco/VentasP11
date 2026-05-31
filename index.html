@@ -25,13 +25,31 @@
                         <label class="text-xs text-slate-400 block mb-1">Nombre y Apellido:</label>
                         <input type="text" id="vecino-nombre" oninput="guardarPerfilLocal()" placeholder="Ej: Carlos Pérez" class="w-full bg-slate-700 text-white p-2 text-sm rounded border border-slate-600 focus:outline-none focus:border-emerald-500">
                     </div>
-                    <div>
-                        <label class="text-xs text-slate-400 block mb-1">Apartamento / Torre:</label>
-                        <input type="text" id="vecino-apto" oninput="guardarPerfilLocal()" placeholder="Ej: Apto 502-B" class="w-full bg-slate-700 text-white p-2 text-sm rounded border border-slate-600 focus:outline-none focus:border-emerald-500">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs text-slate-400 block mb-1">Torre:</label>
+                            <select id="vecino-torre" onchange="guardarPerfilLocal()" class="w-full bg-slate-700 text-white p-2 text-sm rounded border border-slate-600 focus:outline-none focus:border-emerald-500">
+                                <option value="">-- Elige --</option>
+                                <option value="Torre A">Torre A</option>
+                                <option value="Torre B">Torre B</option>
+                                <option value="Torre C">Torre C</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-400 block mb-1">Apartamento:</label>
+                            <select id="vecino-apto" onchange="guardarPerfilLocal()" class="w-full bg-slate-700 text-white p-2 text-sm rounded border border-slate-600 focus:outline-none focus:border-emerald-500">
+                                <option value="">-- Elige --</option>
+                                <option value="101">101</option><option value="102">102</option><option value="103">103</option><option value="104">104</option>
+                                <option value="201">201</option><option value="202">202</option><option value="203">203</option><option value="204">204</option>
+                                <option value="301">301</option><option value="302">302</option><option value="303">303</option><option value="304">304</option>
+                                <option value="401">401</option><option value="402">402</option><option value="403">403</option><option value="404">404</option>
+                                <option value="501">501</option><option value="502">502</option><option value="503">503</option><option value="504">504</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="pt-2 border-t border-slate-700 text-xs text-slate-400 flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        Sesión guardada automáticamente
+                        Ubicación estandarizada
                     </div>
                 </div>
             </div>
@@ -70,8 +88,7 @@
                     <button onclick="cargarDatosNube()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition">🔄 Refrescar Muro</button>
                 </div>
                 
-                <div id="contenedor-vitrina-productos" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    </div>
+                <div id="contenedor-vitrina-productos" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
             </div>
 
             <div id="vista-vender" class="hidden space-y-6">
@@ -98,15 +115,30 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
                             <label class="text-xs text-slate-400 block mb-1">Precio (Pon 0 si es un regalo):</label>
-                            <input type="number" id="prod-precio" placeholder="Ej: 15" class="w-full bg-slate-900 text-white p-2.5 text-sm rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500">
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-sm font-bold">Q</span>
+                                <input type="number" id="prod-precio" placeholder="0.00" class="w-full bg-slate-900 text-white pl-8 pr-2.5 py-2.5 text-sm rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500">
+                            </div>
                         </div>
                         <div>
-                            <label class="text-xs text-slate-400 block mb-1">Tu número de WhatsApp (con código de país, sin espacios):</label>
-                            <input type="text" id="prod-whatsapp" placeholder="Ej: 50255551234" class="w-full bg-slate-900 text-white p-2.5 text-sm rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500">
+                            <label class="text-xs text-slate-400 block mb-1">Disponibilidad / Inventario:</label>
+                            <select id="prod-tipo-cupo" onchange="alternarInputUnidades()" class="w-full bg-slate-900 text-white p-2.5 text-sm rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500">
+                                <option value="ilimitado">∞ Ilimitado (Servicios / Siempre hay)</option>
+                                <option value="limitado">🔢 Cantidad Limitada (Porciones / Unidades)</option>
+                            </select>
                         </div>
+                        <div id="contenedor-prod-unidades" class="hidden">
+                            <label class="text-xs text-slate-400 block mb-1">¿Cuántas unidades tienes?:</label>
+                            <input type="number" id="prod-unidades" min="1" value="1" class="w-full bg-slate-900 text-white p-2.5 text-sm rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="text-xs text-slate-400 block mb-1">Tu número de WhatsApp (sin espacios, ej: 502XXXXXXXX):</label>
+                        <input type="text" id="prod-whatsapp" placeholder="Ej: 50255551234" class="w-full bg-slate-900 text-white p-2.5 text-sm rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500">
                     </div>
 
                     <div class="mb-4 bg-slate-900/60 p-4 rounded-xl border border-slate-700">
@@ -116,9 +148,7 @@
                             <button type="button" onclick="document.getElementById('prod-file-input').click()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-4 py-2.5 rounded-lg border border-slate-600 font-medium transition flex items-center gap-2 cursor-pointer">
                                 📁 Cargar desde Cámara / Galería
                             </button>
-                            
                             <input type="hidden" id="prod-imagen" value="">
-                            
                             <div id="status-carga-imagen" class="text-xs text-slate-400 font-medium">Ninguna foto seleccionada</div>
                             <div id="previsualizacion-contenedor" class="hidden">
                                 <img id="img-preview" src="" class="w-14 h-14 object-cover rounded-lg border border-emerald-500 shadow-md">
@@ -127,7 +157,7 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="text-xs text-slate-400 block mb-1">Detalles breves (Ej: Entrego caliente en Torre A, listo a las 7pm):</label>
+                        <label class="text-xs text-slate-400 block mb-1">Detalles breves (Horarios, lugar de entrega, etc.):</label>
                         <textarea id="prod-descripcion" rows="2" placeholder="Escribe detalles adicionales aquí..." class="w-full bg-slate-900 text-white p-2.5 text-sm rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500"></textarea>
                     </div>
 
@@ -146,12 +176,11 @@
                                 <tr>
                                     <th class="p-3">Producto</th>
                                     <th class="p-3">Precio</th>
-                                    <th class="p-3">Estado</th>
+                                    <th class="p-3">Inventario / Estado</th>
                                     <th class="p-3 text-center">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabla-mis-productos" class="divide-y divide-slate-700">
-                            </tbody>
+                            <tbody id="tabla-mis-productos" class="divide-y divide-slate-700"></tbody>
                         </table>
                     </div>
                 </div>
@@ -165,26 +194,35 @@
         const API_KEY = "$2a$10$RHaekpDpS0pziQh6ES29xO2kxWSnOIoSzzuueTRxnrPr39KE6bCyi";
         const IMGBB_KEY = "bdf75ed1336cd995d0426871a60a1185";
 
-        let estadoGlobal = {
-            productos: []
-        };
-
+        let estadoGlobal = { productos: [] };
         let modoActivo = "comprar";
         let categoriaFiltroActiva = "Todos";
 
         window.onload = function() {
             document.getElementById('vecino-nombre').value = localStorage.getItem('m_vecino_nombre') || '';
+            document.getElementById('vecino-torre').value = localStorage.getItem('m_vecino_torre') || '';
             document.getElementById('vecino-apto').value = localStorage.getItem('m_vecino_apto') || '';
             cargarDatosNube();
         };
 
         function guardarPerfilLocal() {
             const nom = document.getElementById('vecino-nombre').value;
-            const apt = document.getElementById('vecino-apto').value;
+            const torre = document.getElementById('vecino-torre').value;
+            const apto = document.getElementById('vecino-apto').value;
             localStorage.setItem('m_vecino_nombre', nom);
-            localStorage.setItem('m_vecino_apto', apt);
-            // Renderizamos de nuevo para que actualice la tabla del usuario dinámicamente si cambia su apto
+            localStorage.setItem('m_vecino_torre', torre);
+            localStorage.setItem('m_vecino_apto', apto);
             renderizarPantallaMarketplace();
+        }
+
+        function alternarInputUnidades() {
+            const tipo = document.getElementById('prod-tipo-cupo').value;
+            const cont = document.getElementById('contenedor-prod-unidades');
+            if(tipo === 'limitado') {
+                cont.classList.remove('hidden');
+            } else {
+                cont.classList.add('hidden');
+            }
         }
 
         function mostrarProgreso(porcentaje) {
@@ -214,22 +252,15 @@
                     method: "POST",
                     body: formData
                 });
-
-                if(!respuesta.ok) throw new Error("Fallo en la comunicación con ImgBB");
-
+                if(!respuesta.ok) throw new Error("Fallo en ImgBB");
                 const json = await respuesta.json();
-                const urlDeLaFoto = json.data.url;
-
-                hiddenInput.value = urlDeLaFoto;
-                
-                statusDiv.innerHTML = "✅ ¡Foto lista!";
+                hiddenInput.value = json.data.url;
+                statusDiv.innerHTML = "✅ ¡Foto ready!";
                 statusDiv.className = "text-xs text-emerald-400 font-medium";
-                imgPreview.src = urlDeLaFoto;
+                imgPreview.src = json.data.url;
                 previewCont.classList.remove('hidden');
-
             } catch (err) {
-                console.error(err);
-                statusDiv.innerHTML = "❌ Error al cargar la foto. Intenta de nuevo.";
+                statusDiv.innerHTML = "❌ Error al cargar foto.";
                 statusDiv.className = "text-xs text-red-400 font-medium";
             }
         }
@@ -241,15 +272,12 @@
                     method: 'GET',
                     headers: { "X-Master-Key": API_KEY, "X-Bin-Meta": "false" }
                 });
-                if(!res.ok) throw new Error("Error obteniendo datos remotos");
+                if(!res.ok) throw new Error("Error remoto");
                 const data = await res.json();
-                
                 estadoGlobal = data.record ? data.record : data;
                 if(!estadoGlobal.productos) estadoGlobal.productos = [];
-
                 mostrarProgreso(100);
             } catch (err) {
-                console.error("Error base de datos: ", err);
                 mostrarProgreso(100);
             } finally {
                 renderizarPantallaMarketplace();
@@ -268,7 +296,6 @@
                 renderizarPantallaMarketplace();
                 return true;
             } catch (err) {
-                console.error("Error al guardar: ", err);
                 mostrarProgreso(100);
                 return false;
             }
@@ -298,67 +325,72 @@
         function filtrarPorCategoria(cat) {
             categoriaFiltroActiva = cat;
             const categories = ['Todos', 'Comida', 'Ropa', 'Hogar', 'Juguetes', 'Electronicos', 'Regalos', 'Servicios'];
-            
             categories.forEach(c => {
                 const btn = document.getElementById(`cat-${c}`);
                 if(btn) {
-                    if(c === cat) {
-                        btn.className = "w-full text-left text-sm py-2 px-3 rounded-lg font-bold bg-emerald-600 text-white transition";
-                    } else {
-                        btn.className = "w-full text-left text-sm py-2 px-3 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition";
-                    }
+                    btn.className = c === cat ? 
+                        "w-full text-left text-sm py-2 px-3 rounded-lg font-bold bg-emerald-600 text-white transition" : 
+                        "w-full text-left text-sm py-2 px-3 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition";
                 }
             });
-
-            document.getElementById('titulo-categoria-activa').textContent = cat === 'Todos' ? 'Todos' : cat;
+            document.getElementById('titulo-categoria-activa').textContent = cat;
             renderizarPantallaMarketplace();
         }
 
         function renderizarPantallaMarketplace() {
-            const miNombre = document.getElementById('vecino-nombre').value.trim();
-            const miApto = document.getElementById('vecino-apto').value.trim();
+            const miTorre = document.getElementById('vecino-torre').value;
+            const miApto = document.getElementById('vecino-apto').value;
+            const ubicacionCompletaUsuario = (miTorre && miApto) ? `${miTorre} - Apto ${miApto}` : '';
 
             const contenedorVitrina = document.getElementById('contenedor-vitrina-productos');
             if(contenedorVitrina) {
                 contenedorVitrina.innerHTML = '';
-                
-                let productosFiltrados = estadoGlobal.productos;
-                if(categoriaFiltroActiva !== 'Todos') {
-                    productosFiltrados = productosFiltrados.filter(p => p.categoria === categoriaFiltroActiva);
+                let filtered = estadoGlobal.productos;
+                if(categoriaFiltroActiva !== 'Todos') filtered = filtered.filter(p => p.categoria === categoriaFiltroActiva);
+
+                if(filtered.length === 0) {
+                    contenedorVitrina.innerHTML = `<div class="col-span-full p-8 text-center text-slate-500 bg-slate-800/30 rounded-xl border border-slate-800 border-dashed">No hay publicaciones aquí todavía.</div>`;
                 }
 
-                if(productosFiltrados.length === 0) {
-                    contenedorVitrina.innerHTML = `<div class="col-span-full p-8 text-center text-slate-500 bg-slate-800/30 rounded-xl border border-slate-800 border-dashed">No hay artículos publicados en esta categoría todavía. ¡Sé el primero!</div>`;
-                }
-
-                productosFiltrados.forEach(p => {
-                    const imgUrl = p.imagenUrl || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3';
+                filtered.forEach(p => {
+                    const imgUrl = p.imagenUrl || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400';
                     const badgePrecio = p.precio == 0 ? 
                         `<span class="bg-violet-950 text-violet-300 border border-violet-700 text-xs font-black px-2.5 py-1 rounded-md">🎁 GRATIS</span>` : 
-                        `<span class="bg-emerald-950 text-emerald-400 border border-emerald-700 text-xs font-mono font-bold px-2.5 py-1 rounded-md">$${p.precio}</span>`;
+                        `<span class="bg-emerald-950 text-emerald-400 border border-emerald-700 text-xs font-mono font-bold px-2.5 py-1 rounded-md">Q${p.precio}</span>`;
                     
-                    let botonAccion = '';
-                    if(p.estado === 'Disponible') {
-                        botonAccion = `<button onclick="solicitarCompraProducto(${p.id})" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">💬 Reservar por WhatsApp</button>`;
+                    // Indicador de stock / porciones
+                    let badgeStock = '';
+                    if(p.esIlimitado) {
+                        badgeStock = `<span class="text-slate-400 text-[11px]">📦 Disp: Ilimitado</span>`;
                     } else {
-                        botonAccion = `<button disabled class="w-full bg-slate-800 text-slate-500 font-bold py-2 px-4 rounded-lg text-xs cursor-not-allowed border border-slate-700 text-center block">🔒 Reservado por el ${p.compradorApto}</button>`;
+                        badgeStock = p.unidadesDisponibles > 0 ? 
+                            `<span class="text-emerald-400 text-[11px] font-bold">📦 Disp: ${p.unidadesDisponibles} unid.</span>` :
+                            `<span class="text-red-400 text-[11px] font-bold">🚫 Agotado</span>`;
+                    }
+
+                    let botonAccion = '';
+                    if(p.esIlimitado || p.unidadesDisponibles > 0) {
+                        botonAccion = `<button onclick="solicitarCompraProducto(${p.id})" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">💬 Solicitar por WhatsApp</button>`;
+                    } else {
+                        botonAccion = `<button disabled class="w-full bg-slate-800 text-slate-500 font-bold py-2 px-4 rounded-lg text-xs cursor-not-allowed border border-slate-700 text-center block">🔒 Bloqueado / Todo Reservado</button>`;
                     }
 
                     contenedorVitrina.innerHTML += `
                         <div class="bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-slate-700/60 flex flex-col justify-between group">
                             <div class="relative h-44 bg-slate-950">
-                                <img src="${imgUrl}" alt="${p.nombre}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                                 <div class="absolute top-2 right-2">${badgePrecio}</div>
-                                <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded text-[10px] font-medium text-slate-300">📍 Vende: ${p.vendedorApto}</div>
+                                <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded text-[10px] text-slate-300">📍 Ubic: ${p.vendedorUbicacion}</div>
                             </div>
                             <div class="p-4 flex-1 flex flex-col justify-between gap-4">
                                 <div>
-                                    <h3 class="font-bold text-base text-white truncate">${p.nombre}</h3>
-                                    <p class="text-xs text-slate-400 mt-1 line-clamp-2">${p.descripcion || 'Sin descripción adicional.'}</p>
+                                    <div class="flex justify-between items-start mb-1">
+                                        <h3 class="font-bold text-base text-white truncate w-2/3">${p.nombre}</h3>
+                                        ${badgeStock}
+                                    </div>
+                                    <p class="text-xs text-slate-400 line-clamp-2">${p.descripcion || 'Sin detalles.'}</p>
                                 </div>
-                                <div class="pt-3 border-t border-slate-700/50">
-                                    ${botonAccion}
-                                </div>
+                                <div class="pt-3 border-t border-slate-700/50">${botonAccion}</div>
                             </div>
                         </div>`;
                 });
@@ -367,28 +399,32 @@
             const tablaMisProd = document.getElementById('tabla-mis-productos');
             if(tablaMisProd) {
                 tablaMisProd.innerHTML = '';
-                const misProductos = estadoGlobal.productos.filter(p => p.vendedorApto.toLowerCase() === miApto.toLowerCase() && miApto !== '');
+                const misProductos = estadoGlobal.productos.filter(p => p.vendedorUbicacion === ubicacionCompletaUsuario && ubicacionCompletaUsuario !== '');
 
                 if(misProductos.length === 0) {
-                    tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">Escribe tu Apartamento a la izquierda para ver tus publicaciones.</td></tr>`;
+                    tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">Elige tu Torre y Apto a la izquierda para ver y gestionar tus publicaciones.</td></tr>`;
                 }
 
                 misProductos.forEach(p => {
-                    const badgeEstado = p.estado === 'Disponible' ? 
-                        `<span class="bg-emerald-950 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-900">Disponible</span>` : 
-                        `<span class="bg-amber-950 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-900 block">Reservado por: ${p.compradorNombre} (${p.compradorApto})</span>`;
-
-                    const btnLiberar = p.estado === 'Reservado' ? 
-                        `<button onclick="liberarProducto(${p.id})" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] transition cursor-pointer">Habilitar de nuevo</button>` : '';
+                    let txtInventario = p.esIlimitado ? '∞ Ilimitado' : `${p.unidadesDisponibles} restantes de ${p.unidadesTotales}`;
+                    
+                    // Mostrar historial de reservas si tiene
+                    let txtReservas = '';
+                    if(p.historialReservas && p.historialReservas.length > 0) {
+                        txtReservas = `<div class="text-[10px] text-amber-400 mt-1">Reservas por: ${p.historialReservas.join(', ')}</div>`;
+                    }
 
                     tablaMisProd.innerHTML += `
                         <tr class="hover:bg-slate-700/20 transition text-xs">
                             <td class="p-3 font-semibold text-white">${p.nombre}</td>
-                            <td class="p-3 font-mono text-emerald-400">${p.precio == 0 ? 'Regalo' : '$' + p.precio}</td>
-                            <td class="p-3">${badgeEstado}</td>
+                            <td class="p-3 font-mono text-emerald-400">Q${p.precio}</td>
+                            <td class="p-3 text-slate-300">
+                                <div>${txtInventario}</div>
+                                ${txtReservas}
+                            </td>
                             <td class="p-3 text-center flex justify-center gap-2">
-                                ${btnLiberar}
-                                <button onclick="eliminarProducto(${p.id})" class="bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-900 px-2 py-1 rounded text-[11px] transition cursor-pointer">Eliminar</button>
+                                <button onclick="reponerStock(${p.id})" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] cursor-pointer">🔄 Reiniciar / Reponer</button>
+                                <button onclick="eliminarProducto(${p.id})" class="bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-900 px-2 py-1 rounded text-[11px] cursor-pointer">Eliminar</button>
                             </td>
                         </tr>`;
                 });
@@ -402,17 +438,21 @@
             const whatsapp = document.getElementById('prod-whatsapp').value.trim();
             const imagenUrl = document.getElementById('prod-imagen').value.trim();
             const descripcion = document.getElementById('prod-descripcion').value.trim();
+            
+            const tipoCupo = document.getElementById('prod-tipo-cupo').value;
+            const unidadesInput = parseInt(document.getElementById('prod-unidades').value) || 1;
 
             const miNombre = document.getElementById('vecino-nombre').value.trim();
-            const miApto = document.getElementById('vecino-apto').value.trim();
+            const miTorre = document.getElementById('vecino-torre').value;
+            const miApto = document.getElementById('vecino-apto').value;
 
-            if(!miNombre || !miApto) {
-                alert("⚠️ Primero debes escribir tu Nombre y Apartamento en el panel izquierdo para poder publicar.");
+            if(!miNombre || !miTorre || !miApto) {
+                alert("⚠️ Primero debes ingresar tu Nombre, Torre y Apartamento a la izquierda.");
                 return;
             }
 
             if(!nombre || precioRaw === "" || !whatsapp) {
-                alert("⚠️ Por favor completa los campos obligatorios: Nombre, Precio y WhatsApp de contacto.");
+                alert("⚠️ Por favor completa los campos básicos obligatorios.");
                 return;
             }
 
@@ -427,63 +467,84 @@
                 imagenUrl: imagenUrl,
                 descripcion: descripcion,
                 vendedorNombre: miNombre,
-                vendedorApto: miApto,
-                estado: 'Disponible',
-                compradorNombre: null,
-                compradorApto: null
+                vendedorUbicacion: `${miTorre} - Apto ${miApto}`,
+                esIlimitado: (tipoCupo === 'ilimitado'),
+                unidadesTotales: (tipoCupo === 'ilimitado') ? 999 : unidadesInput,
+                unidadesDisponibles: (tipoCupo === 'ilimitado') ? 999 : unidadesInput,
+                historialReservas: []
             };
 
             estadoGlobal.productos.push(nuevoArticulo);
 
+            // Limpieza del formulario
             document.getElementById('prod-nombre').value = '';
             document.getElementById('prod-precio').value = '';
             document.getElementById('prod-imagen').value = '';
             document.getElementById('prod-descripcion').value = '';
             document.getElementById('prod-file-input').value = '';
             document.getElementById('status-carga-imagen').innerHTML = "Ninguna foto seleccionada";
-            document.getElementById('status-carga-imagen').className = "text-xs text-slate-400 font-medium";
             document.getElementById('previsualizacion-contenedor').classList.add('hidden');
 
             await guardarDatosNube();
-            alert("✨ ¡Publicación creada con éxito! Ya se encuentra en la vitrina con su foto.");
+            alert("✨ ¡Publicado con éxito en Quetzales y con control de porciones!");
         }
 
         async function solicitarCompraProducto(id) {
             const miNombre = document.getElementById('vecino-nombre').value.trim();
-            const miApto = document.getElementById('vecino-apto').value.trim();
+            const miTorre = document.getElementById('vecino-torre').value;
+            const miApto = document.getElementById('vecino-apto').value;
 
-            if(!miNombre || !miApto) {
-                alert("⚠️ Para poder reservar un artículo, por favor ingresa tu Nombre y número de Apartamento en el módulo de la izquierda.");
+            if(!miNombre || !miTorre || !miApto) {
+                alert("⚠️ Para reservar, ingresa primero tu Identificación a la izquierda.");
                 return;
             }
 
             let producto = estadoGlobal.productos.find(p => p.id === id);
             if(!producto) return;
 
-            producto.estado = 'Reservado';
-            producto.compradorNombre = miNombre;
-            producto.compradorApto = miApto;
+            // Restar stock si no es ilimitado
+            if(!producto.esIlimitado) {
+                if(producto.unidadesDisponibles <= 0) {
+                    alert("🚫 ¡Vaya! Este producto ya se agotó.");
+                    return;
+                }
+                producto.unidadesDisponibles -= 1;
+            }
+
+            const miUbicacionCorto = `${miTorre} (${miApto})`;
+            if(!producto.historialReservas) producto.historialReservas = [];
+            producto.historialReservas.push(`${miNombre} de ${miUbicacionCorto}`);
 
             await guardarDatosNube();
 
-            const textoMensaje = `Hola, soy ${miNombre} del ${miApto}. Me interesa tu producto "${producto.nombre}" que publicaste en la App del Edificio. ¿Nos ponemos de acuerdo para la entrega?`;
-            const enlaceUrl = `https://wa.me/${producto.whatsapp}?text=${encodeURIComponent(textoMensaje)}`;
-
-            window.open(enlaceUrl, '_blank');
+            const textoMensaje = `Hola, soy ${miNombre} de la ${miTorre} apto ${miApto}. Me interesa reservar una unidad de "${producto.nombre}" en el Marketplace del edificio por Q${producto.precio}.`;
+            window.open(`https://wa.me/${producto.whatsapp}?text=${encodeURIComponent(textoMensaje)}`, '_blank');
         }
 
-        async function liberarProducto(id) {
+        async function reponerStock(id) {
             let producto = estadoGlobal.productos.find(p => p.id === id);
             if(producto) {
-                producto.estado = 'Disponible';
-                producto.compradorNombre = null;
-                producto.compradorApto = null;
+                let nuevaCant = prompt("¿Con cuántas unidades deseas reabastecer esta publicación? (Escribe 0 para dejarlo Ilimitado):", producto.unidadesTotales);
+                if(nuevaCant === null) return;
+                
+                let cantInt = parseInt(nuevaCant);
+                if(isNaN(cantInt) || cantInt === 0) {
+                    producto.esIlimitado = true;
+                    producto.unidadesTotales = 999;
+                    producto.unidadesDisponibles = 999;
+                } else {
+                    producto.esIlimitado = false;
+                    producto.unidadesTotales = cantInt;
+                    producto.unidadesDisponibles = cantInt;
+                }
+                producto.historialReservas = []; // Limpiamos el historial al reiniciar stock
                 await guardarDatosNube();
+                alert("🔄 ¡Inventario actualizado con éxito!");
             }
         }
 
         async function eliminarProducto(id) {
-            if(!confirm("¿Estás seguro de que deseas eliminar permanentemente esta publicación?")) return;
+            if(!confirm("¿Deseas eliminar permanentemente esta publicación?")) return;
             estadoGlobal.productos = estadoGlobal.productos.filter(p => p.id !== id);
             await guardarDatosNube();
         }
