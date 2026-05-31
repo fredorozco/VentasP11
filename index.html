@@ -43,6 +43,11 @@
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                         Sesión guardada automáticamente
                     </div>
+                    <div class="pt-2">
+                        <button onclick="limpiarTodaLaInfo()" class="w-full bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-900/60 font-medium py-2 px-3 rounded-lg text-xs transition duration-200 active:scale-95 flex items-center justify-center gap-1.5">
+                            🗑️ Limpiar Toda la Info
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -515,26 +520,55 @@
                 let nuevaCant = prompt("¿Con cuántas unidades deseas reabastecer esta publicación? (Escribe 0 para dejarlo Ilimitado):", producto.unidadesTotales);
                 if(nuevaCant === null) return;
                 
-                let cantInt = parseInt(nuevaCant);
-                if(isNaN(cantInt) || cantInt === 0) {
+                let num = parseInt(nuevaCant);
+                if(isNaN(num) || num < 0) {
+                    alert("Cantidad inválida");
+                    return;
+                }
+                
+                if(num === 0) {
                     producto.esIlimitado = true;
                     producto.unidadesTotales = 999;
                     producto.unidadesDisponibles = 999;
                 } else {
                     producto.esIlimitado = false;
-                    producto.unidadesTotales = cantInt;
-                    producto.unidadesDisponibles = cantInt;
+                    producto.unidadesTotales = num;
+                    producto.unidadesDisponibles = num;
                 }
                 producto.historialReservas = [];
                 await guardarDatosNube();
-                alert("🔄 ¡Inventario actualizado con éxito!");
             }
         }
 
         async function eliminarProducto(id) {
-            if(!confirm("¿Deseas eliminar permanentemente esta publicación?")) return;
-            estadoGlobal.productos = estadoGlobal.productos.filter(p => p.id !== id);
-            await guardarDatosNube();
+            if(confirm("¿Seguro que deseas eliminar esta publicación permanentemente?")) {
+                estadoGlobal.productos = estadoGlobal.productos.filter(p => p.id !== id);
+                await guardarDatosNube();
+            }
+        }
+
+        // NUEVA FUNCIÓN: Limpia LocalStorage e inicializa el servidor remoto a cero
+        async function limpiarTodaLaInfo() {
+            const confirmar = confirm("🚨 ¡ATENCIÓN! Esto borrará tu nombre guardado localmente y ELIMINARÁ todos los productos de la base de datos en la nube. ¿Estás seguro de que deseas continuar?");
+            if (!confirmar) return;
+
+            // 1. Limpiar inputs visuales e identificación en LocalStorage
+            localStorage.clear();
+            document.getElementById('vecino-nombre').value = '';
+            document.getElementById('vecino-torre').value = '';
+            document.getElementById('vecino-apto').value = '';
+
+            // 2. Reiniciar el estado local de productos
+            estadoGlobal = { productos: [] };
+
+            // 3. Subir el estado vacío a la nube (JSONBin)
+            const exitoRemoto = await guardarDatosNube();
+
+            if (exitoRemoto) {
+                alert("🗑️ Todos los datos de la app y la nube se han limpiado exitosamente.");
+            } else {
+                alert("⚠️ Se borraron tus datos locales, pero ocurrió un error al limpiar el servidor en la nube.");
+            }
         }
     </script>
 </body>
