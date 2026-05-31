@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏢 Marketplace Vecinal - Nuestro Edificio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-12">
+
+    <header class="bg-gradient-to-r from-emerald-950 via-emerald-900 to-slate-950 text-white text-center py-6 shadow-lg mb-6 relative">
+        <h1 class="text-3xl font-extrabold tracking-wider">🏢 MARKETPLACE VECINAL</h1>
+        <p class="text-sm text-emerald-200 mt-2">Compra, vende y comparte con la comunidad de nuestro edificio</p>
+        <div id="loading-bar" class="absolute bottom-0 left-0 h-1 bg-emerald-500 transition-all duration-500" style="width: 0%"></div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-4 gap-8">
+        
+        <div class="lg:col-span-1 space-y-6">
+            <div class="bg-slate-800 p-5 rounded-xl shadow-md border border-slate-700">
+                <h2 class="text-lg font-bold text-emerald-400 mb-3">👤 Tu Identificación</h2>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs text-slate-400 block mb-1">Nombre y Apellido:</label>
+                        <input type="text" id="vecino-nombre" oninput="guardarPerfilLocal()" placeholder="Ej: Carlos Pérez" class="w-full bg-slate-700 text-white p-2 text-sm rounded border border-slate-600 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 block mb-1">Apartamento / Torre:</label>
+                        <input type="text" id="vecino-apto" oninput="guardarPerfilLocal()" placeholder="Ej: Apto 502-B" class="w-full bg-slate-700 text-white p-2 text-sm rounded border border-slate-600 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div class="pt-2 border-t border-slate-700 text-xs text-slate-400 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        Sesión guardada automáticamente
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 p-5 rounded-xl shadow-md border border-slate-700">
+                <h2 class="text-sm font-black text-slate-300 uppercase tracking-wider mb-3">📂 Categorías</h2>
+                <div class="space-y-1" id="lista-categorias-filtros">
+                    <button onclick="filtrarPorCategoria('Todos')" id="cat-Todos" class="w-full text-left text-sm py-2 px-3 rounded-lg font-bold bg-emerald-600 text-white transition">🌟 Ver Todo</button>
+                    <button onclick="filtrarPorCategoria('Comida')" id="cat-Comida" class="w-full text-left text-sm py-2 px-3 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition">🍔 Comida / Repostería</button>
+                    <button onclick="filtrarPorCategoria('Ropa')" id="cat-Ropa" class="w-full text-left text-sm py-2 px-3 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition">👕 Ropa & Accesorios</button>
+                    <button onclick="filtrarPorCategoria('Hogar')" id="cat-Hogar" class="w-full text-left text-sm py-2 px-3 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition">🏠 Hogar & Decoración</button>
+                    <button onclick="filtrarPorCategoria('Juguetes')" id="cat-Juguetes" class="w-full text-left text-sm py-2 px-3 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition">🧸 Juguetes & Niños</button>
+                    <button onclick="filtrarPorCategoria('Electronicos')" id="cat-Electronicos" class="w-full text-left text-sm py-2 px-3 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition">⚡ Electrónicos</button>
+                    <button onclick="filtrarPorCategoria('Regalos')" id="cat-Regalos" class="w-full text-left text-sm py-2 px-3 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition">🎁 Regalos / Gratis</button>
+                    <button onclick="filtrarPorCategoria('Servicios')" id="cat-Servicios" class="w-full text-left text-sm py-2 px-3 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition">🔧 Servicios / Oficios</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-3 space-y-6">
+            
+            <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800 shadow-inner flex gap-2">
+                <button onclick="cambiarModoApp('comprar')" id="btn-modo-comprar" class="w-full font-bold py-3 px-4 rounded-lg text-sm transition-all bg-emerald-600 text-white shadow">
+                    🛍️ Vitrina del Edificio (Comprar)
+                </button>
+                <button onclick="cambiarModoApp('vender')" id="btn-modo-vender" class="w-full font-bold py-3 px-4 rounded-lg text-sm transition-all bg-slate-800 text-slate-400 hover:text-white">
+                    🧑‍🍳 Publicar mi Producto o Regalo
+                </button>
+            </div>
+
+            <div id="vista-comprar" class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold flex items-center gap-2">
+                        🛒 Catálogo Disponible: <span id="titulo-categoria-activa" class="text-emerald-400">Todos</span>
+                    </h2>
+                    <button onclick="cargarDatosNube()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition">🔄 Refrescar Muro</button>
+                </div>
+                
+                <div id="contenedor-vitrina-productos" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    </div>
+            </div>
+
+            <div id="vista-vender" class="hidden space-y-6">
+                
+                <div class="bg-slate-800 p-6 rounded-xl shadow-md border border-slate-700">
+                    <h2 class="text-lg font-bold text-emerald-400 mb-4 flex items-center gap-2">✨ ¿Qué deseas ofrecer hoy al edificio?</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="text-xs text-slate-400 block mb-1">Nombre del artículo o servicio:</label>
+                            <input type="text" id="prod-nombre" placeholder="Ej: Porción de Lasaña Familiar" class="w-full bg-slate-900 text-white p-2.5 text-sm rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-400 block mb-1">Categoría:</label>
+                            <select id="prod-categoria" class="w-full bg-slate-900 text-white p-2.5 text-sm rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500">
+                                <option value="Comida">🍔 Comida / Repostería</option>
+                                <option value="Ropa">👕 Ropa & Accesorios</option>
+                                <option value="Hogar">🏠 Hogar & Decoración</option>
+                                <option value="Juguetes">🧸 Juguetes & Niños</option>
+                                <option value="Electronicos">⚡ Electrónicos</option>
+                                <option value="Regalos">🎁 Regalos / Gratis</option>
+                                <option value="Servicios">🔧 Servicios / Oficios</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="text-xs text-slate-400 block mb-1">Precio (Pon 0 si es un regalo):</label>
+                            <input type="number" id="prod-precio" placeholder="Ej: 15" class="w-full bg-slate-900 text-white p-2.5 text-sm rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-400 block mb-1">Tu número de WhatsApp (con código de país, sin espacios):</label>
+                            <input type="text" id="prod-whatsapp" placeholder="Ej: 50255551234" class="w-full bg-slate-900 text-white p-2.5 text-sm rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <div class="mb-4 bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                        <label class="text-xs font-bold text-slate-300 block mb-2">📸 Foto Real del Producto:</label>
+                        <div class="flex flex-col sm:flex-row items-center gap-4">
+                            <input type="file" id="prod-file-input" accept="image/*" onchange="subirImagenAInternet()" class="hidden">
+                            <button type="button" onclick="document.getElementById('prod-file-input').click()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-4 py-2.5 rounded-lg border border-slate-600 font-medium transition flex items-center gap-2 cursor-pointer">
+                                📁 Cargar desde Cámara / Galería
+                            </button>
+                            
+                            <input type="hidden" id="prod-imagen" value="">
+                            
+                            <div id="status-carga-imagen" class="text-xs text-slate-400 font-medium">Ninguna foto seleccionada</div>
+                            <div id="previsualizacion-contenedor" class="hidden">
+                                <img id="img-preview" src="" class="w-14 h-14 object-cover rounded-lg border border-emerald-500 shadow-md">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="text-xs text-slate-400 block mb-1">Detalles breves (Ej: Entrego caliente en Torre A, listo a las 7pm):</label>
+                        <textarea id="prod-descripcion" rows="2" placeholder="Escribe detalles adicionales aquí..." class="w-full bg-slate-900 text-white p-2.5 text-sm rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500"></textarea>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button onclick="publicarArticuloNuevo()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-2.5 rounded-lg shadow transition transform active:scale-95 text-sm">
+                            🚀 Publicar en la Vitrina
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 p-6 rounded-xl shadow-md border border-slate-700">
+                    <h3 class="text-base font-bold text-slate-300 mb-4">🛠️ Administrar Mis Productos Guardados</h3>
+                    <div class="overflow-x-auto rounded-lg border border-slate-700">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-700 text-slate-300 font-bold text-xs uppercase">
+                                <tr>
+                                    <th class="p-3">Producto</th>
+                                    <th class="p-3">Precio</th>
+                                    <th class="p-3">Estado</th>
+                                    <th class="p-3 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-mis-productos" class="divide-y divide-slate-700">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = "https://api.jsonbin.io/v3/b/6a1ca71421f9ee59d2a26b55";
+        const API_KEY = "$2a$10$RHaekpDpS0pziQh6ES29xO2kxWSnOIoSzzuueTRxnrPr39KE6bCyi";
+        const IMGBB_KEY = "bdf75ed1336cd995d0426871a60a1185";
+
+        let estadoGlobal = {
+            productos: []
+        };
+
+        let modoActivo = "comprar";
+        let categoriaFiltroActiva = "Todos";
+
+        window.onload = function() {
+            document.getElementById('vecino-nombre').value = localStorage.getItem('m_vecino_nombre') || '';
+            document.getElementById('vecino-apto').value = localStorage.getItem('m_vecino_apto') || '';
+            cargarDatosNube();
+        };
+
+        function guardarPerfilLocal() {
+            const nom = document.getElementById('vecino-nombre').value;
+            const apt = document.getElementById('vecino-apto').value;
+            localStorage.setItem('m_vecino_nombre', nom);
+            localStorage.setItem('m_vecino_apto', apt);
+            // Renderizamos de nuevo para que actualice la tabla del usuario dinámicamente si cambia su apto
+            renderizarPantallaMarketplace();
+        }
+
+        function mostrarProgreso(porcentaje) {
+            const barra = document.getElementById('loading-bar');
+            if (barra) barra.style.width = `${porcentaje}%`;
+        }
+
+        async function subirImagenAInternet() {
+            const fileInput = document.getElementById('prod-file-input');
+            const statusDiv = document.getElementById('status-carga-imagen');
+            const previewCont = document.getElementById('previsualizacion-contenedor');
+            const imgPreview = document.getElementById('img-preview');
+            const hiddenInput = document.getElementById('prod-imagen');
+
+            if (!fileInput.files || fileInput.files.length === 0) return;
+
+            const archivo = fileInput.files[0];
+            statusDiv.innerHTML = "⏳ Subiendo y procesando foto...";
+            statusDiv.className = "text-xs text-yellow-400 font-medium";
+            previewCont.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append("image", archivo);
+
+            try {
+                const respuesta = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
+                    method: "POST",
+                    body: formData
+                });
+
+                if(!respuesta.ok) throw new Error("Fallo en la comunicación con ImgBB");
+
+                const json = await respuesta.json();
+                const urlDeLaFoto = json.data.url;
+
+                hiddenInput.value = urlDeLaFoto;
+                
+                statusDiv.innerHTML = "✅ ¡Foto lista!";
+                statusDiv.className = "text-xs text-emerald-400 font-medium";
+                imgPreview.src = urlDeLaFoto;
+                previewCont.classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerHTML = "❌ Error al cargar la foto. Intenta de nuevo.";
+                statusDiv.className = "text-xs text-red-400 font-medium";
+            }
+        }
+
+        async function cargarDatosNube() {
+            mostrarProgreso(30);
+            try {
+                const res = await fetch(`${API_URL}/latest`, {
+                    method: 'GET',
+                    headers: { "X-Master-Key": API_KEY, "X-Bin-Meta": "false" }
+                });
+                if(!res.ok) throw new Error("Error obteniendo datos remotos");
+                const data = await res.json();
+                
+                estadoGlobal = data.record ? data.record : data;
+                if(!estadoGlobal.productos) estadoGlobal.productos = [];
+
+                mostrarProgreso(100);
+            } catch (err) {
+                console.error("Error base de datos: ", err);
+                mostrarProgreso(100);
+            } finally {
+                renderizarPantallaMarketplace();
+            }
+        }
+
+        async function guardarDatosNube() {
+            mostrarProgreso(40);
+            try {
+                await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+                    body: JSON.stringify(estadoGlobal)
+                });
+                mostrarProgreso(100);
+                renderizarPantallaMarketplace();
+                return true;
+            } catch (err) {
+                console.error("Error al guardar: ", err);
+                mostrarProgreso(100);
+                return false;
+            }
+        }
+
+        function cambiarModoApp(modo) {
+            modoActivo = modo;
+            const btnC = document.getElementById('btn-modo-comprar');
+            const btnV = document.getElementById('btn-modo-vender');
+            const vistaC = document.getElementById('vista-comprar');
+            const vistaV = document.getElementById('vista-vender');
+
+            if(modo === 'comprar') {
+                btnC.className = "w-full font-bold py-3 px-4 rounded-lg text-sm transition-all bg-emerald-600 text-white shadow";
+                btnV.className = "w-full font-bold py-3 px-4 rounded-lg text-sm transition-all bg-slate-800 text-slate-400 hover:text-white";
+                vistaC.classList.remove('hidden');
+                vistaV.classList.add('hidden');
+            } else {
+                btnV.className = "w-full font-bold py-3 px-4 rounded-lg text-sm transition-all bg-emerald-600 text-white shadow";
+                btnC.className = "w-full font-bold py-3 px-4 rounded-lg text-sm transition-all bg-slate-800 text-slate-400 hover:text-white";
+                vistaV.classList.remove('hidden');
+                vistaC.classList.add('hidden');
+            }
+            renderizarPantallaMarketplace();
+        }
+
+        function filtrarPorCategoria(cat) {
+            categoriaFiltroActiva = cat;
+            const categories = ['Todos', 'Comida', 'Ropa', 'Hogar', 'Juguetes', 'Electronicos', 'Regalos', 'Servicios'];
+            
+            categories.forEach(c => {
+                const btn = document.getElementById(`cat-${c}`);
+                if(btn) {
+                    if(c === cat) {
+                        btn.className = "w-full text-left text-sm py-2 px-3 rounded-lg font-bold bg-emerald-600 text-white transition";
+                    } else {
+                        btn.className = "w-full text-left text-sm py-2 px-3 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition";
+                    }
+                }
+            });
+
+            document.getElementById('titulo-categoria-activa').textContent = cat === 'Todos' ? 'Todos' : cat;
+            renderizarPantallaMarketplace();
+        }
+
+        function renderizarPantallaMarketplace() {
+            const miNombre = document.getElementById('vecino-nombre').value.trim();
+            const miApto = document.getElementById('vecino-apto').value.trim();
+
+            const contenedorVitrina = document.getElementById('contenedor-vitrina-productos');
+            if(contenedorVitrina) {
+                contenedorVitrina.innerHTML = '';
+                
+                let productosFiltrados = estadoGlobal.productos;
+                if(categoriaFiltroActiva !== 'Todos') {
+                    productosFiltrados = productosFiltrados.filter(p => p.categoria === categoriaFiltroActiva);
+                }
+
+                if(productosFiltrados.length === 0) {
+                    contenedorVitrina.innerHTML = `<div class="col-span-full p-8 text-center text-slate-500 bg-slate-800/30 rounded-xl border border-slate-800 border-dashed">No hay artículos publicados en esta categoría todavía. ¡Sé el primero!</div>`;
+                }
+
+                productosFiltrados.forEach(p => {
+                    const imgUrl = p.imagenUrl || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3';
+                    const badgePrecio = p.precio == 0 ? 
+                        `<span class="bg-violet-950 text-violet-300 border border-violet-700 text-xs font-black px-2.5 py-1 rounded-md">🎁 GRATIS</span>` : 
+                        `<span class="bg-emerald-950 text-emerald-400 border border-emerald-700 text-xs font-mono font-bold px-2.5 py-1 rounded-md">$${p.precio}</span>`;
+                    
+                    let botonAccion = '';
+                    if(p.estado === 'Disponible') {
+                        botonAccion = `<button onclick="solicitarCompraProducto(${p.id})" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">💬 Reservar por WhatsApp</button>`;
+                    } else {
+                        botonAccion = `<button disabled class="w-full bg-slate-800 text-slate-500 font-bold py-2 px-4 rounded-lg text-xs cursor-not-allowed border border-slate-700 text-center block">🔒 Reservado por el ${p.compradorApto}</button>`;
+                    }
+
+                    contenedorVitrina.innerHTML += `
+                        <div class="bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-slate-700/60 flex flex-col justify-between group">
+                            <div class="relative h-44 bg-slate-950">
+                                <img src="${imgUrl}" alt="${p.nombre}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                <div class="absolute top-2 right-2">${badgePrecio}</div>
+                                <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded text-[10px] font-medium text-slate-300">📍 Vende: ${p.vendedorApto}</div>
+                            </div>
+                            <div class="p-4 flex-1 flex flex-col justify-between gap-4">
+                                <div>
+                                    <h3 class="font-bold text-base text-white truncate">${p.nombre}</h3>
+                                    <p class="text-xs text-slate-400 mt-1 line-clamp-2">${p.descripcion || 'Sin descripción adicional.'}</p>
+                                </div>
+                                <div class="pt-3 border-t border-slate-700/50">
+                                    ${botonAccion}
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            }
+
+            const tablaMisProd = document.getElementById('tabla-mis-productos');
+            if(tablaMisProd) {
+                tablaMisProd.innerHTML = '';
+                const misProductos = estadoGlobal.productos.filter(p => p.vendedorApto.toLowerCase() === miApto.toLowerCase() && miApto !== '');
+
+                if(misProductos.length === 0) {
+                    tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">Escribe tu Apartamento a la izquierda para ver tus publicaciones.</td></tr>`;
+                }
+
+                misProductos.forEach(p => {
+                    const badgeEstado = p.estado === 'Disponible' ? 
+                        `<span class="bg-emerald-950 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-900">Disponible</span>` : 
+                        `<span class="bg-amber-950 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-900 block">Reservado por: ${p.compradorNombre} (${p.compradorApto})</span>`;
+
+                    const btnLiberar = p.estado === 'Reservado' ? 
+                        `<button onclick="liberarProducto(${p.id})" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] transition cursor-pointer">Habilitar de nuevo</button>` : '';
+
+                    tablaMisProd.innerHTML += `
+                        <tr class="hover:bg-slate-700/20 transition text-xs">
+                            <td class="p-3 font-semibold text-white">${p.nombre}</td>
+                            <td class="p-3 font-mono text-emerald-400">${p.precio == 0 ? 'Regalo' : '$' + p.precio}</td>
+                            <td class="p-3">${badgeEstado}</td>
+                            <td class="p-3 text-center flex justify-center gap-2">
+                                ${btnLiberar}
+                                <button onclick="eliminarProducto(${p.id})" class="bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-900 px-2 py-1 rounded text-[11px] transition cursor-pointer">Eliminar</button>
+                            </td>
+                        </tr>`;
+                });
+            }
+        }
+
+        async function publicarArticuloNuevo() {
+            const nombre = document.getElementById('prod-nombre').value.trim();
+            const categoria = document.getElementById('prod-categoria').value;
+            const precioRaw = document.getElementById('prod-precio').value;
+            const whatsapp = document.getElementById('prod-whatsapp').value.trim();
+            const imagenUrl = document.getElementById('prod-imagen').value.trim();
+            const descripcion = document.getElementById('prod-descripcion').value.trim();
+
+            const miNombre = document.getElementById('vecino-nombre').value.trim();
+            const miApto = document.getElementById('vecino-apto').value.trim();
+
+            if(!miNombre || !miApto) {
+                alert("⚠️ Primero debes escribir tu Nombre y Apartamento en el panel izquierdo para poder publicar.");
+                return;
+            }
+
+            if(!nombre || precioRaw === "" || !whatsapp) {
+                alert("⚠️ Por favor completa los campos obligatorios: Nombre, Precio y WhatsApp de contacto.");
+                return;
+            }
+
+            const nuevoId = estadoGlobal.productos.length > 0 ? Math.max(...estadoGlobal.productos.map(p => p.id)) + 1 : 1;
+
+            const nuevoArticulo = {
+                id: nuevoId,
+                nombre: nombre,
+                categoria: categoria,
+                precio: parseFloat(precioRaw),
+                whatsapp: whatsapp,
+                imagenUrl: imagenUrl,
+                descripcion: descripcion,
+                vendedorNombre: miNombre,
+                vendedorApto: miApto,
+                estado: 'Disponible',
+                compradorNombre: null,
+                compradorApto: null
+            };
+
+            estadoGlobal.productos.push(nuevoArticulo);
+
+            document.getElementById('prod-nombre').value = '';
+            document.getElementById('prod-precio').value = '';
+            document.getElementById('prod-imagen').value = '';
+            document.getElementById('prod-descripcion').value = '';
+            document.getElementById('prod-file-input').value = '';
+            document.getElementById('status-carga-imagen').innerHTML = "Ninguna foto seleccionada";
+            document.getElementById('status-carga-imagen').className = "text-xs text-slate-400 font-medium";
+            document.getElementById('previsualizacion-contenedor').classList.add('hidden');
+
+            await guardarDatosNube();
+            alert("✨ ¡Publicación creada con éxito! Ya se encuentra en la vitrina con su foto.");
+        }
+
+        async function solicitarCompraProducto(id) {
+            const miNombre = document.getElementById('vecino-nombre').value.trim();
+            const miApto = document.getElementById('vecino-apto').value.trim();
+
+            if(!miNombre || !miApto) {
+                alert("⚠️ Para poder reservar un artículo, por favor ingresa tu Nombre y número de Apartamento en el módulo de la izquierda.");
+                return;
+            }
+
+            let producto = estadoGlobal.productos.find(p => p.id === id);
+            if(!producto) return;
+
+            producto.estado = 'Reservado';
+            producto.compradorNombre = miNombre;
+            producto.compradorApto = miApto;
+
+            await guardarDatosNube();
+
+            const textoMensaje = `Hola, soy ${miNombre} del ${miApto}. Me interesa tu producto "${producto.nombre}" que publicaste en la App del Edificio. ¿Nos ponemos de acuerdo para la entrega?`;
+            const enlaceUrl = `https://wa.me/${producto.whatsapp}?text=${encodeURIComponent(textoMensaje)}`;
+
+            window.open(enlaceUrl, '_blank');
+        }
+
+        async function liberarProducto(id) {
+            let producto = estadoGlobal.productos.find(p => p.id === id);
+            if(producto) {
+                producto.estado = 'Disponible';
+                producto.compradorNombre = null;
+                producto.compradorApto = null;
+                await guardarDatosNube();
+            }
+        }
+
+        async function eliminarProducto(id) {
+            if(!confirm("¿Estás seguro de que deseas eliminar permanentemente esta publicación?")) return;
+            estadoGlobal.productos = estadoGlobal.productos.filter(p => p.id !== id);
+            await guardarDatosNube();
+        }
+    </script>
+</body>
+</html>
