@@ -32,24 +32,16 @@
                                 <option value="">-- Elige --</option>
                                 <option value="Torre A">Torre A</option>
                                 <option value="Torre B">Torre B</option>
-                                <option value="Torre C">Torre C</option>
                             </select>
                         </div>
                         <div>
                             <label class="text-xs text-slate-400 block mb-1">Apartamento:</label>
-                            <select id="vecino-apto" onchange="guardarPerfilLocal()" class="w-full bg-slate-700 text-white p-2 text-sm rounded border border-slate-600 focus:outline-none focus:border-emerald-500">
-                                <option value="">-- Elige --</option>
-                                <option value="101">101</option><option value="102">102</option><option value="103">103</option><option value="104">104</option>
-                                <option value="201">201</option><option value="202">202</option><option value="203">203</option><option value="204">204</option>
-                                <option value="301">301</option><option value="302">302</option><option value="303">303</option><option value="304">304</option>
-                                <option value="401">401</option><option value="402">402</option><option value="403">403</option><option value="404">404</option>
-                                <option value="501">501</option><option value="502">502</option><option value="503">503</option><option value="504">504</option>
-                            </select>
+                            <input type="text" id="vecino-apto" oninput="guardarPerfilLocal()" placeholder="Ej: 502" class="w-full bg-slate-700 text-white p-2 text-sm rounded border border-slate-600 focus:outline-none focus:border-emerald-500">
                         </div>
                     </div>
                     <div class="pt-2 border-t border-slate-700 text-xs text-slate-400 flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        Ubicación estandarizada
+                        Sesión guardada automáticamente
                     </div>
                 </div>
             </div>
@@ -208,7 +200,7 @@
         function guardarPerfilLocal() {
             const nom = document.getElementById('vecino-nombre').value;
             const torre = document.getElementById('vecino-torre').value;
-            const apto = document.getElementById('vecino-apto').value;
+            const apto = document.getElementById('vecino-apto').value.trim();
             localStorage.setItem('m_vecino_nombre', nom);
             localStorage.setItem('m_vecino_torre', torre);
             localStorage.setItem('m_vecino_apto', apto);
@@ -339,7 +331,7 @@
 
         function renderizarPantallaMarketplace() {
             const miTorre = document.getElementById('vecino-torre').value;
-            const miApto = document.getElementById('vecino-apto').value;
+            const miApto = document.getElementById('vecino-apto').value.trim();
             const ubicacionCompletaUsuario = (miTorre && miApto) ? `${miTorre} - Apto ${miApto}` : '';
 
             const contenedorVitrina = document.getElementById('contenedor-vitrina-productos');
@@ -358,7 +350,6 @@
                         `<span class="bg-violet-950 text-violet-300 border border-violet-700 text-xs font-black px-2.5 py-1 rounded-md">🎁 GRATIS</span>` : 
                         `<span class="bg-emerald-950 text-emerald-400 border border-emerald-700 text-xs font-mono font-bold px-2.5 py-1 rounded-md">Q${p.precio}</span>`;
                     
-                    // Indicador de stock / porciones
                     let badgeStock = '';
                     if(p.esIlimitado) {
                         badgeStock = `<span class="text-slate-400 text-[11px]">📦 Disp: Ilimitado</span>`;
@@ -402,13 +393,12 @@
                 const misProductos = estadoGlobal.productos.filter(p => p.vendedorUbicacion === ubicacionCompletaUsuario && ubicacionCompletaUsuario !== '');
 
                 if(misProductos.length === 0) {
-                    tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">Elige tu Torre y Apto a la izquierda para ver y gestionar tus publicaciones.</td></tr>`;
+                    tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">Elige tu Torre e ingresa tu Apto a la izquierda para gestionar tus publicaciones.</td></tr>`;
                 }
 
                 misProductos.forEach(p => {
                     let txtInventario = p.esIlimitado ? '∞ Ilimitado' : `${p.unidadesDisponibles} restantes de ${p.unidadesTotales}`;
                     
-                    // Mostrar historial de reservas si tiene
                     let txtReservas = '';
                     if(p.historialReservas && p.historialReservas.length > 0) {
                         txtReservas = `<div class="text-[10px] text-amber-400 mt-1">Reservas por: ${p.historialReservas.join(', ')}</div>`;
@@ -444,7 +434,7 @@
 
             const miNombre = document.getElementById('vecino-nombre').value.trim();
             const miTorre = document.getElementById('vecino-torre').value;
-            const miApto = document.getElementById('vecino-apto').value;
+            const miApto = document.getElementById('vecino-apto').value.trim();
 
             if(!miNombre || !miTorre || !miApto) {
                 alert("⚠️ Primero debes ingresar tu Nombre, Torre y Apartamento a la izquierda.");
@@ -476,7 +466,6 @@
 
             estadoGlobal.productos.push(nuevoArticulo);
 
-            // Limpieza del formulario
             document.getElementById('prod-nombre').value = '';
             document.getElementById('prod-precio').value = '';
             document.getElementById('prod-imagen').value = '';
@@ -486,13 +475,13 @@
             document.getElementById('previsualizacion-contenedor').classList.add('hidden');
 
             await guardarDatosNube();
-            alert("✨ ¡Publicado con éxito en Quetzales y con control de porciones!");
+            alert("✨ ¡Publicado con éxito en Quetzales!");
         }
 
         async function solicitarCompraProducto(id) {
             const miNombre = document.getElementById('vecino-nombre').value.trim();
             const miTorre = document.getElementById('vecino-torre').value;
-            const miApto = document.getElementById('vecino-apto').value;
+            const miApto = document.getElementById('vecino-apto').value.trim();
 
             if(!miNombre || !miTorre || !miApto) {
                 alert("⚠️ Para reservar, ingresa primero tu Identificación a la izquierda.");
@@ -502,7 +491,6 @@
             let producto = estadoGlobal.productos.find(p => p.id === id);
             if(!producto) return;
 
-            // Restar stock si no es ilimitado
             if(!producto.esIlimitado) {
                 if(producto.unidadesDisponibles <= 0) {
                     alert("🚫 ¡Vaya! Este producto ya se agotó.");
@@ -537,7 +525,7 @@
                     producto.unidadesTotales = cantInt;
                     producto.unidadesDisponibles = cantInt;
                 }
-                producto.historialReservas = []; // Limpiamos el historial al reiniciar stock
+                producto.historialReservas = [];
                 await guardarDatosNube();
                 alert("🔄 ¡Inventario actualizado con éxito!");
             }
