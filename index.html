@@ -1,11 +1,15 @@
-<!DOCTYPE html><html lang="es"><head>
+<!DOCTYPE html>
+<html lang="es">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🏢 Marketplace Vecinal - Nuestro Edificio</title>
-    <script src="https://cdn.tailwindcss.com"></script></head><body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-12">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-12">
 
     <header class="bg-gradient-to-r from-emerald-950 via-emerald-900 to-slate-950 text-white text-center py-6 shadow-lg mb-6 relative">
-        <h1 class="text-3xl font-extrabold tracking-wider">🏢 MARKETPLACE VECINAL</h1>
+        <h1 class="text-3xl font-extrabold tracking-wider">🏢 MARKETPLACE PARQUE 11</h1>
         <p class="text-sm text-emerald-200 mt-2">Compra, vende y comparte con la comunidad de nuestro edificio</p>
         <div id="loading-bar" class="absolute bottom-0 left-0 h-1 bg-emerald-500 transition-all duration-500" style="width: 0%"></div>
     </header>
@@ -35,12 +39,12 @@
                             <input type="text" id="vecino-apto" oninput="guardarPerfilLocal()" placeholder="Ej: 502" class="w-full bg-slate-700 text-white p-2 text-sm rounded border border-slate-600 focus:outline-none focus:border-emerald-500">
                         </div>
                     </div>
-                    <div onclick="limpiarTodaLaInfoAdmin()" class="pt-2 border-t border-slate-700 text-xs text-slate-500 flex items-center justify-between gap-1.5 cursor-default select-none hover:text-slate-400 transition-colors">
+                    <div class="pt-2 border-t border-slate-700 text-xs text-slate-500 flex items-center justify-between gap-1.5 cursor-default select-none hover:text-slate-400 transition-colors">
                         <div class="flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                             Sesión guardada automáticamente
                         </div>
-                        <span class="text-[9px] opacity-20 hover:opacity-100">⚙️</span>
+                        <span onclick="limpiarTodaLaInfoAdmin()" class="text-[11px] opacity-40 hover:opacity-100 cursor-pointer p-1 bg-slate-700 rounded hover:bg-slate-600 transition" title="Borrado masivo de productos (Admin)">⚙️ Masivo</span>
                     </div>
                 </div>
             </div>
@@ -185,7 +189,7 @@
         const API_KEY = "$2a$10$RHaekpDpS0pziQh6ES29xO2kxWSnOIoSzzuueTRxnrPr39KE6bCyi";
         const IMGBB_KEY = "bdf75ed1336cd995d0426871a60a1185";
         
-        // 🔑 CLAVE DEL ADMINISTRADOR (Puedes cambiarla aquí por la que tú quieras)
+        // 🔑 CLAVE DEL ADMINISTRADOR para borrado masivo
         const CLAVE_ADMIN = "admin1234"; 
 
         let estadoGlobal = { productos: [] };
@@ -423,9 +427,84 @@
             }
         }
 
+        // 🔏 ELIMINACIÓN INDIVIDUAL: Ahora es directa y libre sin contraseña
+        async function eliminarProducto(id) {
+            if(confirm("¿Estás seguro de que quieres eliminar esta publicación permanentemente de la vitrina?")) {
+                estadoGlobal.productos = estadoGlobal.productos.filter(p => p.id !== id);
+                await guardarDatosNube();
+                alert("🗑️ Publicación eliminada correctamente.");
+            }
+        }
+
+        // 🔑 ELIMINACIÓN MASIVA: Pide contraseña de administrador
+        async function limpiarTodaLaInfoAdmin() {
+            const pass = prompt("🔐 Función de Administración:\nPor favor ingresa la contraseña para borrar TODOS los productos de la plataforma de manera masiva:");
+            if (pass === null) return; // Cancelado
+
+            if (pass === CLAVE_ADMIN) {
+                if(confirm("⚠️ ¡ADVERTENCIA CRÍTICA!\n¿Estás completamente seguro de que quieres borrar ABSOLUTAMENTE TODOS los productos del edificio? Esta acción no se puede deshacer.")) {
+                    estadoGlobal.productos = [];
+                    await guardarDatosNube();
+                    alert("💥 Se han eliminado de manera masiva todos los artículos de la base de datos.");
+                }
+            } else {
+                alert("❌ Contraseña incorrecta. Acceso denegado.");
+            }
+        }
+
+        async function reponerStock(id) {
+            const prod = estadoGlobal.productos.find(p => p.id === id);
+            if(prod) {
+                prod.unidadesDisponibles = prod.unidadesTotales;
+                prod.historialReservas = [];
+                await guardarDatosNube();
+                alert("🔄 Stock restablecido correctamente.");
+            }
+        }
+
+        async function solicitarCompraProducto(id) {
+            const p = estadoGlobal.productos.find(prod => prod.id === id);
+            if(!p) return;
+
+            const miNombre = document.getElementById('vecino-nombre').value.trim();
+            const miTorre = document.getElementById('vecino-torre').value;
+            const miApto = document.getElementById('vecino-apto').value.trim();
+
+            if(!miNombre || !miTorre || !miApto) {
+                alert("⚠️ Para comprar o consultar, primero ingresa tu Nombre, Torre y Apto en el panel izquierdo.");
+                cambiarModoApp('comprar');
+                return;
+            }
+
+            // Registrar reserva local si no es ilimitado
+            if(!p.esIlimitado && p.unidadesDisponibles > 0) {
+                p.unidadesDisponibles--;
+                const compradorId = `${miNombre} (${miTorre}-${miApto})`;
+                if(!p.historialReservas.includes(compradorId)) {
+                    p.historialReservas.push(compradorId);
+                }
+                await guardarDatosNube();
+            }
+
+            // Enlace de la vitrina dinámico basado en dónde está abierta la app actualmente
+            const linkVitrina = window.location.href;
+
+            // Texto para enviarle al vendedor por privado
+            let textoCompra = `👋 ¡Hola! Vi tu publicación en el *Marketplace del Edificio* 🏢\n\n` +
+                              `🛍️ *Me interesa:* ${p.nombre}\n` +
+                              `💰 *Precio:* ${p.precio == 0 ? '🎁 ¡GRATIS!' : 'Q' + p.precio}\n\n` +
+                              `👤 *Soy el vecino:* ${miNombre}\n` +
+                              `📍 *Ubicación:* ${miTorre} - Apto ${miApto}\n\n` +
+                              `🖼️ *Foto del artículo:* ${p.imagenUrl || '(Sin Foto)'}\n\n` +
+                              `🔗 *Link del Marketplace:* ${linkVitrina}\n\n` +
+                              `¿Sigue disponible? ¡Gracias!`;
+
+            window.open(`https://wa.me/${p.whatsapp}?text=${encodeURIComponent(textoCompra)}`, '_blank');
+        }
+
         async function publicarArticuloNuevo() {
             const nombre = document.getElementById('prod-nombre').value.trim();
-            const categoria = document.getElementById('prod-categoria').value;
+            const category = document.getElementById('prod-categoria').value;
             const precioRaw = document.getElementById('prod-precio').value;
             const whatsapp = document.getElementById('prod-whatsapp').value.trim();
             const imagenUrl = document.getElementById('prod-imagen').value.trim();
@@ -453,7 +532,7 @@
             const nuevoArticulo = {
                 id: nuevoId,
                 nombre: nombre,
-                categoria: categoria,
+                categoria: category,
                 precio: parseFloat(precioRaw),
                 whatsapp: whatsapp,
                 imagenUrl: imagenUrl,
@@ -468,6 +547,7 @@
 
             estadoGlobal.productos.push(nuevoArticulo);
 
+            // Limpieza de inputs del formulario
             document.getElementById('prod-nombre').value = '';
             document.getElementById('prod-precio').value = '';
             document.getElementById('prod-imagen').value = '';
@@ -476,99 +556,30 @@
             document.getElementById('status-carga-imagen').innerHTML = "Ninguna foto seleccionada";
             document.getElementById('previsualizacion-contenedor').classList.add('hidden');
 
-            // Guardar cambios en el backend (JSONBin)
             await guardarDatosNube();
+            cambiarModoApp('comprar');
 
-            // 📣 MEJORA EXTRA: REDIRECCIÓN AUTOMÁTICA AL GRUPO DE WHATSAPP
+            // Enlace de la vitrina dinámico
+            const linkVitrina = window.location.href;
+
+            // 📣 POST COMPARTIDO DE WHATSAPP CON LINK, DATOS Y FOTO INCORPORADA
             const textoWhatsApp = `🏢 *NUEVO PRODUCTO EN EL MARKETPLACE* 🏢\n\n` +
                                   `🛍️ *Producto:* ${nombre}\n` +
-                                  `🗂️ *Categoría:* ${categoria}\n` +
+                                  `🗂️ *Categoría:* ${category}\n` +
                                   `💰 *Precio:* ${parseFloat(precioRaw) == 0 ? '🎁 ¡GRATIS!' : 'Q' + precioRaw}\n` +
                                   `📍 *Ubicación:* ${miTorre} - Apto ${miApto}\n` +
                                   `👤 *Vendedor:* ${miNombre}\n` +
-                                  `📱 *Contacto directo:* https://wa.me/${whatsapp}\n\n` +
+                                  `🖼️ *Foto del producto:* ${imagenUrl || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400'}\n\n` +
                                   `${descripcion ? '📝 *Detalles:* ' + descripcion + '\n\n' : ''}` +
-                                  `✨ ¡Entra a la vitrina del edificio para ver más detalles o fotos!`;
+                                  `🔗 *Entra a ver la vitrina aquí:* ${linkVitrina}\n\n` +
+                                  `📱 *Contacto directo para comprar:* https://wa.me/${whatsapp}`;
 
-            const urlMensaje = encodeURIComponent(textoWhatsApp);
-            
-            // Cuadro de confirmación amigable antes de redirigir
-            const compartir = confirm("✨ ¡Publicado con éxito en la vitrina digital!\n\n¿Deseas abrir WhatsApp ahora para compartirlo en el grupo del edificio?");
+            const compartir = confirm("✨ ¡Publicado con éxito en la vitrina digital del edificio!\n\n¿Deseas abrir WhatsApp ahora para compartirlo de manera interactiva en el grupo del edificio?");
             
             if (compartir) {
-                window.open(`https://api.whatsapp.com/send?text=${urlMensaje}`, '_blank');
-            }
-        }
-
-        async function solicitarCompraProducto(id) {
-            const miNombre = document.getElementById('vecino-nombre').value.trim();
-            const miTorre = document.getElementById('vecino-torre').value;
-            const miApto = document.getElementById('vecino-apto').value.trim();
-
-            if(!miNombre || !miTorre || !miApto) {
-                alert("⚠️ Para reservar, ingresa primero tu Identificación a la izquierda.");
-                return;
-            }
-
-            let producto = estadoGlobal.productos.find(p => p.id === id);
-            if(!producto) return;
-
-            if(!producto.esIlimitado) {
-                if(producto.unidadesDisponibles <= 0) {
-                    alert("🚫 ¡Vaya! Este producto ya se agotó.");
-                    return;
-                }
-                producto.unidadesDisponibles -= 1;
-            }
-
-            const miUbicacionCorto = `${miTorre} - Apto ${miApto}`;
-            if (!producto.historialReservas) producto.historialReservas = [];
-            producto.historialReservas.push(`${miNombre} (${miUbicacionCorto})`);
-
-            await guardarDatosNube();
-
-            const textoMsg = `Hola! Vi tu producto "${producto.nombre}" en el Marketplace del edificio. Mi nombre es ${miNombre} de la ${miUbicacionCorto} y me gustaría adquirirlo.`;
-            window.open(`https://api.whatsapp.com/send?phone=${producto.whatsapp}&text=${encodeURIComponent(textoMsg)}`, '_blank');
-        }
-
-        // Funciones auxiliares para complementar los eventos del HTML original
-        async function reponerStock(id) {
-            let producto = estadoGlobal.productos.find(p => p.id === id);
-            if(!producto) return;
-            if(producto.esIlimitado) return;
-            
-            const nuevasUnidades = prompt(`¿Cuántas unidades totales deseas tener ahora de "${producto.nombre}"?`, producto.unidadesTotales);
-            if(nuevasUnidades === null || isNaN(nuevasUnidades) || parseInt(nuevasUnidades) < 1) return;
-            
-            producto.unidadesTotales = parseInt(nuevasUnidades);
-            producto.unidadesDisponibles = parseInt(nuevasUnidades);
-            producto.historialReservas = [];
-            
-            await guardarDatosNube();
-            alert("🔄 Inventario restablecido.");
-        }
-
-        async function eliminarProducto(id) {
-            const pass = prompt("Por seguridad introduce la clave de administrador para borrar o confirmar tu identidad:");
-            if(pass !== CLAVE_ADMIN) {
-                alert("❌ Clave incorrecta.");
-                return;
-            }
-            estadoGlobal.productos = estadoGlobal.productos.filter(p => p.id !== id);
-            await guardarDatosNube();
-            alert("🗑️ Producto removido.");
-        }
-
-        function limpiarTodaLaInfoAdmin() {
-            const pass = prompt("Panel de administración global. Introduce la clave:");
-            if(pass === CLAVE_ADMIN) {
-                if(confirm("¿Seguro que deseas vaciar TODO el Marketplace del edificio? Esto no se puede deshacer.")){
-                    estadoGlobal.productos = [];
-                    guardarDatosNube();
-                }
-            } else {
-                alert("Acceso denegado.");
+                window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWhatsApp)}`, '_blank');
             }
         }
     </script>
-</body></html>
+</body>
+</html>
