@@ -186,7 +186,6 @@
 
     <script>
         // 🛠️ CONFIGURACIÓN DE TU NUEVA API DE GOOGLE SHEETS
-        // Reemplaza esta URL por el enlace largo de ejecución (/exec) que te dio Google Apps Script al implementar
         const API_URL = "https://script.google.com/macros/s/AKfycbwR-H1yVszq025BxBEFnAcV6pAib0j7I1ZcHVFUocbOMHST3prib0XFjwqXDRPu8SK2/exec";
         const IMGBB_KEY = "bdf75ed1336cd995d0426871a60a1185";
         
@@ -334,13 +333,14 @@
                 }
 
                 filtered.forEach(p => {
-                    const imgUrl = p.imagenUrl || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400';
+                    const imgUrl = p.imagenUrl || p.imagen_url || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400';
                     const badgePrecio = p.precio == 0 ? 
                         `<span class="bg-violet-950 text-violet-300 border border-violet-700 text-xs font-black px-2.5 py-1 rounded-md">🎁 GRATIS</span>` : 
                         `<span class="bg-emerald-950 text-emerald-400 border border-emerald-700 text-xs font-mono font-bold px-2.5 py-1 rounded-md">Q${p.precio}</span>`;
                     
                     let badgeStock = '';
-                    if(p.esIlimitado) {
+                    // Interceptamos 999 o texto "ilimitado" para renderizar correctamente
+                    if(p.esIlimitado || p.disponibilidad === 'ilimitado' || p.unidadesDisponibles == 999 || p.unidadesTotales == 999) {
                         badgeStock = `<span class="text-slate-400 text-[11px]">📦 Disp: Ilimitado</span>`;
                     } else {
                         badgeStock = p.unidadesDisponibles > 0 ? 
@@ -348,7 +348,6 @@
                             `<span class="text-red-400 text-[11px] font-bold">🚫 Agotado</span>`;
                     }
 
-                    // 🚨 LÓGICA DE NEGOCIO: El botón de WhatsApp NO SE BLOQUEA si están preguntando. Solo si está marcado como VENDIDO.
                     let botonAccion = '';
                     if(p.estado === 'vendido') {
                         botonAccion = `<button disabled class="w-full bg-slate-800 text-red-400 font-bold py-2 px-4 rounded-lg text-xs cursor-not-allowed border border-slate-700 text-center block">🤝 COMPRADO POR APTO ${p.compradorApto || 'Vecino'}</button>`;
@@ -361,12 +360,12 @@
                             <div class="relative h-44 bg-slate-950">
                                 <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                                 <div class="absolute top-2 right-2">${badgePrecio}</div>
-                                <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded text-[10px] text-slate-300">📍 Ubic: ${p.vendedorUbicacion}</div>
+                                <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded text-[10px] text-slate-300">📍 Ubic: ${p.vendedorUbicacion || (p.torre + ' - Apto ' + p.apartamento)}</div>
                             </div>
                             <div class="p-4 flex-1 flex flex-col justify-between gap-4">
                                 <div>
                                     <div class="flex justify-between items-start mb-1">
-                                        <h3 class="font-bold text-base text-white truncate w-2/3">${p.nombre}</h3>
+                                        <h3 class="font-bold text-base text-white truncate w-2/3">${p.nombre || p.titulo}</h3>
                                         ${badgeStock}
                                     </div>
                                     <p class="text-xs text-slate-400 line-clamp-2">${p.descripcion || 'Sin detalles.'}</p>
@@ -380,17 +379,19 @@
             const tablaMisProd = document.getElementById('tabla-mis-productos');
             if(tablaMisProd) {
                 tablaMisProd.innerHTML = '';
-                // Filtramos por el perfil del vendedor actual (Google Auth Simulado por Ubicación)
-                const misProductos = estadoGlobal.productos.filter(p => p.vendedorUbicacion === ubicacionCompletaUsuario && ubicacionCompletaUsuario !== '');
+                const misProductos = estadoGlobal.productos.filter(p => {
+                    const ubi = p.vendedorUbicacion || `${p.torre} - Apto ${p.apartamento}`;
+                    return ubi === ubicacionCompletaUsuario && ubicacionCompletaUsuario !== '';
+                });
 
                 if(misProductos.length === 0) {
                     tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">Elige tu Torre e ingresa tu Apto a la izquierda para gestionar tus publicaciones.</td></tr>`;
                 }
 
                 misProductos.forEach(p => {
-                    let txtInventario = p.esIlimitado ? '∞ Ilimitado' : `${p.unidadesDisponibles} restantes de ${p.unidadesTotales}`;
+                    let txtInventario = (p.esIlimitado || p.disponibilidad === 'ilimitado' || p.unidadesDisponibles == 999) ? '∞ Ilimitado' : `${p.unidadesDisponibles} restantes de ${p.unidadesTotales}`;
                     let renderEstado = p.estado === 'vendido' ? 
-                        `<span class="text-red-400 font-bold">[🤝 Vendido a Apto ${p.compradorApto}]</span>` : 
+                        `<span class="text-red-400 font-bold">[🤝 Vendido a Apto ${p.compradorApto || 'Vecino'}]</span>` : 
                         `<span class="text-emerald-400">[Activo en Vitrina]</span>`;
                     
                     let botonVendido = p.estado !== 'vendido' ? 
@@ -398,7 +399,7 @@
 
                     tablaMisProd.innerHTML += `
                         <tr class="hover:bg-slate-700/20 transition text-xs">
-                            <td class="p-3 font-semibold text-white">${p.nombre}</td>
+                            <td class="p-3 font-semibold text-white">${p.nombre || p.titulo}</td>
                             <td class="p-3 font-mono text-emerald-400">Q${p.precio}</td>
                             <td class="p-3 text-slate-300">
                                 <div>${txtInventario}</div>
@@ -413,16 +414,15 @@
             }
         }
 
-        // 🤝 ACCIÓN: MARCAR COMO VENDIDO EN GOOGLE SHEETS (doPost -> action: marcarVendido)
         async function marcarComoVendidoEnSheets(id) {
             const aptoComprador = prompt("Por favor ingresa el número de apartamento del vecino que te compró el producto:");
             if (!aptoComprador) return;
 
             mostrarProgreso(40);
             try {
-                const res = await fetch(API_URL, {
+                await fetch(API_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Necesario para Google Apps Script web apps si no se maneja CORS dinámico
+                    mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: "marcarVendido",
@@ -432,14 +432,13 @@
                 });
                 
                 alert("✅ ¡Producto marcado como vendido! Los cambios se reflejarán en unos segundos.");
-                setTimeout(cargarDatosNube, 1500); // Recargar datos de Sheets
+                setTimeout(cargarDatosNube, 1500);
             } catch (err) {
                 console.error(err);
                 alert("Error al conectar con Google Sheets.");
             }
         }
 
-        // 🗑️ ACCIÓN: ELIMINAR DE GOOGLE SHEETS (doPost -> action: delete)
         async function eliminarProducto(id) {
             if(confirm("¿Estás seguro de que quieres eliminar esta publicación permanentemente de la vitrina?")) {
                 mostrarProgreso(40);
@@ -461,7 +460,6 @@
             }
         }
 
-        // 🔑 ACCIÓN MASIVA: LIMPIAR TODO (doPost -> action: clear_all)
         async function limpiarTodaLaInfoAdmin() {
             const pass = prompt("🔐 Función de Administración:\nPor favor ingresa la contraseña para borrar TODOS los productos de Google Sheets:");
             if (pass === null) return;
@@ -488,7 +486,7 @@
         }
 
         async function solicitarCompraProducto(id) {
-            const p = estadoGlobal.productos.find(prod => prod.id === id);
+            const p = estadoGlobal.productos.find(prod => prod.id === id.toString() || prod.id == id);
             if(!p) return;
 
             const miNombre = document.getElementById('vecino-nombre').value.trim();
@@ -500,85 +498,83 @@
                 return;
             }
 
-            const linkVitrina = window.location.href;
-            let textoCompra = `👋 ¡Hola! Vi tu publicación en el *Marketplace del Edificio* 🏢\n\n` +
-                              `🛍️ *Me interesa:* ${p.nombre}\n` +
-                              `💰 *Precio:* ${p.precio == 0 ? '🎁 ¡GRATIS!' : 'Q' + p.precio}\n\n` +
-                              `👤 *Soy el vecino:* ${miNombre}\n` +
-                              `📍 *Ubicación:* ${miTorre} - Apto ${miApto}\n\n` +
-                              `¿Sigue disponible? ¡Gracias!`;
+            const textoCompra = `👋 ¡Hola! Vi tu publicación en el *Marketplace del Edificio* 🏢\n\n` +
+                                `🛍️ *Me interesa:* ${p.nombre || p.titulo}\n` +
+                                `💰 *Precio:* Q${p.precio}\n\n` +
+                                `👤 *Soy tu vecino:* ${miNombre}\n` +
+                                `📍 *Ubicación:* ${miTorre} - Apto ${miApto}\n\n` +
+                                `¿Sigue disponible? ¡Gracias!`;
 
-            window.open(`https://wa.me/${p.whatsapp}?text=${encodeURIComponent(textoCompra)}`, '_blank');
+            const telefonoLimpio = (p.telefono || '').toString().replace(/\D/g, '');
+            window.open(`https://wa.me/${telefonoLimpio}?text=${encodeURIComponent(textoCompra)}`, '_blank');
         }
 
-        // 🚀 ACCIÓN: PUBLICAR EN GOOGLE SHEETS (doPost -> action: create)
         async function publicarArticuloNuevo() {
-            const nombre = document.getElementById('prod-nombre').value.trim();
-            const category = document.getElementById('prod-categoria').value;
-            const precioRaw = document.getElementById('prod-precio').value;
-            const whatsapp = document.getElementById('prod-whatsapp').value.trim();
-            const descripcion = document.getElementById('prod-descripcion').value.trim();
-            const tipoCupo = document.getElementById('prod-tipo-cupo').value;
-            const unidadesRaw = document.getElementById('prod-unidades').value;
-            const imagenUrl = document.getElementById('prod-imagen').value;
-
             const miNombre = document.getElementById('vecino-nombre').value.trim();
             const miTorre = document.getElementById('vecino-torre').value;
             const miApto = document.getElementById('vecino-apto').value.trim();
 
             if(!miNombre || !miTorre || !miApto) {
-                alert("⚠️ Primero rellena tu sección de Identificación a la izquierda (Nombre, Torre y Apto).");
+                alert("⚠️ Primero completa tus datos en el módulo de Identificación a la izquierda.");
                 return;
             }
+
+            const nombre = document.getElementById('prod-nombre').value.trim();
+            const category = document.getElementById('prod-categoria').value;
+            const precioRaw = document.getElementById('prod-precio').value;
+            const tipoCupo = document.getElementById('prod-tipo-cupo').value;
+            const unidadesRaw = document.getElementById('prod-unidades').value;
+            const whatsapp = document.getElementById('prod-whatsapp').value.trim();
+            const imagenUrl = document.getElementById('prod-imagen').value;
+            const descripcion = document.getElementById('prod-descripcion').value.trim();
 
             if(!nombre || !whatsapp) {
-                alert("⚠️ El nombre del artículo y el WhatsApp son campos obligatorios.");
+                alert("⚠️ El nombre del artículo y el número de WhatsApp son obligatorios.");
                 return;
             }
 
+            mostrarProgreso(20);
+
             const productoNuevo = {
-                id: Date.now().toString(), // Genera ID único basado en tiempo
+                action: "insert",
+                id: Date.now().toString(),
                 titulo: nombre,
                 descripcion: descripcion,
                 precio: parseFloat(precioRaw || 0),
                 categoria: category,
                 disponibilidad: tipoCupo === 'ilimitado' ? 'ilimitado' : unidadesRaw.toString(),
-                imagen_url: imagenUrl,
+                imagen_url: imagenUrl || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400',
                 torre: miTorre,
                 apartamento: miApto,
-                vendedor: miNombre, // Aquí asocia el perfil de Google Auth/Nombre
+                vendedor: miNombre,
                 telefono: whatsapp,
                 fecha_publicacion: new Date().toLocaleDateString('es-GT'),
-                estado: "disponible" // Estado inicial
+                estado: "disponible"
             };
 
-            mostrarProgreso(40);
             try {
                 await fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: "create",
-                        producto: productoNuevo
-                    })
+                    body: JSON.stringify(productoNuevo)
                 });
 
-                alert("🚀 ¡Publicado con éxito en Google Sheets!");
+                alert("🚀 ¡Publicación enviada con éxito!");
                 
-                // Limpiar Formulario
+                // Limpiar campos del formulario
                 document.getElementById('prod-nombre').value = '';
                 document.getElementById('prod-precio').value = '';
                 document.getElementById('prod-descripcion').value = '';
                 document.getElementById('prod-imagen').value = '';
-                document.getElementById('previsualizacion-contenedor').classList.add('hidden');
                 document.getElementById('status-carga-imagen').innerHTML = "Ninguna foto seleccionada";
                 document.getElementById('status-carga-imagen').className = "text-xs text-slate-400 font-medium";
-
+                document.getElementById('previsualizacion-contenedor').classList.add('hidden');
+                
                 cambiarModoApp('comprar');
                 setTimeout(cargarDatosNube, 1500);
             } catch (err) {
-                alert("Error de conexión al guardar el producto.");
+                alert("Ocurrió un problema al subir tu producto.");
             }
         }
     </script>
