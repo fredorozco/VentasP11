@@ -132,7 +132,7 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="text-xs text-slate-400 block mb-1">Tu número de WhatsApp (sin espacios, ej: 502XXXXXXXX):</label>
+                        <label class="text-xs text-slate-400 block mb-1">Tu número de WhatsApp (sin espacios ni símbolos, ej: 502XXXXXXXX):</label>
                         <input type="text" id="prod-whatsapp" placeholder="Ej: 50255551234" class="w-full bg-slate-900 text-white p-2.5 text-sm rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500">
                     </div>
 
@@ -185,11 +185,9 @@
     </main>
 
     <script>
-        // 🛠️ CONFIGURACIÓN DE TU NUEVA API DE GOOGLE SHEETS
+        // 🛠️ CONFIGURACIÓN DE TU API DE GOOGLE SHEETS Y IMGBB
         const API_URL = "https://script.google.com/macros/s/AKfycbwR-H1yVszq025BxBEFnAcV6pAib0j7I1ZcHVFUocbOMHST3prib0XFjwqXDRPu8SK2/exec";
         const IMGBB_KEY = "bdf75ed1336cd995d0426871a60a1185";
-        
-        // 🔑 CLAVE DEL ADMINISTRADOR para borrado masivo
         const CLAVE_ADMIN = "fred3769"; 
 
         let estadoGlobal = { productos: [] };
@@ -263,7 +261,6 @@
             }
         }
 
-        // 🔄 LEER PRODUCTOS DESDE GOOGLE SHEETS (doGet)
         async function cargarDatosNube() {
             if (API_URL.includes("Pega_Aqui")) return;
             mostrarProgreso(30);
@@ -342,7 +339,7 @@
                         badgeStock = `<span class="text-slate-400 text-[11px]">📦 Disp: Ilimitado</span>`;
                     } else {
                         badgeStock = p.unidadesDisponibles > 0 ? 
-                            `<span class="text-emerald-400 text-[11px] font-bold">📦 Disp: ${p.unidadesDisponibles} unid.</span>` :
+                            `<span class="text-emerald-400 text-[11px] font-bold">📦 Disp: ${p.unidadesDisponibles} unid.</span>` : 
                             `<span class="text-red-400 text-[11px] font-bold">🚫 Agotado</span>`;
                     }
 
@@ -378,21 +375,13 @@
             if(tablaMisProd) {
                 tablaMisProd.innerHTML = '';
                 
-                // Normalización de cadenas de texto para hacer la comparación flexible de la base de datos antigua
                 const torreInputLimpia = miTorre.toLowerCase().replace(/\s+/g, '');
                 const aptoInputLimpio = miApto.toLowerCase().replace(/\s+/g, '');
 
                 const misProductos = estadoGlobal.productos.filter(p => {
                     if (!p.vendedorUbicacion) return false;
-
-                    // Limpieza del string largo "Torre B - Apto 1005" -> "torreb-apto1005"
                     const ubiDataLimpia = p.vendedorUbicacion.toLowerCase().replace(/\s+/g, '');
-
-                    // Comprobamos si contiene de forma segura los fragmentos ingresados en los inputs
-                    const contieneTorre = ubiDataLimpia.includes(torreInputLimpia);
-                    const contieneApto = ubiDataLimpia.includes(aptoInputLimpio);
-
-                    return contieneTorre && contieneApto && aptoInputLimpio !== '';
+                    return ubiDataLimpia.includes(torreInputLimpia) && ubiDataLimpia.includes(aptoInputLimpio) && aptoInputLimpio !== '';
                 });
 
                 if(misProductos.length === 0) {
@@ -402,7 +391,7 @@
                 misProductos.forEach(p => {
                     let txtInventario = (p.esIlimitado || p.disponibilidad === 'ilimitado' || p.unidadesDisponibles == 999) ? '∞ Ilimitado' : `${p.unidadesDisponibles} restantes`;
                     let renderEstado = p.estado === 'vendido' ? 
-                        `<span class="text-red-400 font-bold">[🤝 Vendido]</span>` : 
+                        `<span class="text-red-400 font-bold">[🤝 Vendido / Agotado]</span>` : 
                         `<span class="text-emerald-400">[Activo]</span>`;
                     
                     let botonVendido = p.estado !== 'vendido' ? 
@@ -416,12 +405,137 @@
                                 <div>${txtInventario}</div>
                                 <div class="text-[10px] mt-0.5">${renderEstado}</div>
                             </td>
-                            <td class="p-3 text-center flex justify-center gap-2">
+                            <td class="p-3 text-center flex justify-center items-center gap-2">
+                                <button onclick="recargarInventarioProducto(${p.id})" class="bg-blue-950 hover:bg-blue-900 text-blue-400 border border-blue-800 px-2 py-1 rounded text-[11px] cursor-pointer">🔄 Restock</button>
                                 ${botonVendido}
                                 <button onclick="eliminarProducto(${p.id})" class="bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-900 px-2 py-1 rounded text-[11px] cursor-pointer">Eliminar</button>
                             </td>
                         </tr>`;
                 });
+            }
+        }
+
+        async function solicitarCompraProducto(id) {
+            const p = estadoGlobal.productos.find(prod => prod.id === id.toString() || prod.id == id);
+            if(!p) return;
+
+            const miNombre = document.getElementById('vecino-nombre').value.trim();
+            const miTorre = document.getElementById('vecino-torre').value;
+            const miApto = document.getElementById('vecino-apto').value.trim();
+
+            if(!miNombre || !miTorre || !miApto) {
+                alert("⚠️ Para consultar, primero ingresa tu Nombre, Torre y Apto en el panel izquierdo.");
+                return;
+            }
+
+            const textoWhatsApp = `¡Hola vecino! Mi nombre es ${miNombre} de la ${miTorre}, apartamento ${miApto}. Estoy interesado en tu producto: *${p.nombre || p.titulo}* publicado en el Market de Parque 11. ¿Sigue disponible?`;
+            const urlFinal = `https://wa.me/${p.whatsapp || p.telefono}?text=${encodeURIComponent(textoWhatsApp)}`;
+            window.open(urlFinal, '_blank');
+        }
+
+        // 🚀 NUEVA FUNCIÓN CORREGIDA: ENVIAR PRODUCTO A GOOGLE SHEETS
+        async function publicarArticuloNuevo() {
+            const miNombre = document.getElementById('vecino-nombre').value.trim();
+            const miTorre = document.getElementById('vecino-torre').value;
+            const miApto = document.getElementById('vecino-apto').value.trim();
+
+            // Validar Perfil
+            if(!miNombre || !miTorre || !miApto) {
+                alert("❌ ERROR: Debes rellenar tus datos de Identificación (Nombre, Torre y Apto) en el panel izquierdo antes de publicar.");
+                return;
+            }
+
+            const nombreProd = document.getElementById('prod-nombre').value.trim();
+            const categoriaProd = document.getElementById('prod-categoria').value;
+            const precioProd = document.getElementById('prod-precio').value.trim();
+            const tipoCupo = document.getElementById('prod-tipo-cupo').value;
+            let unidadesProd = document.getElementById('prod-unidades').value;
+            let whatsappProd = document.getElementById('prod-whatsapp').value.trim();
+            const imagenProd = document.getElementById('prod-imagen').value;
+            const descProd = document.getElementById('prod-descripcion').value.trim();
+
+            // Validaciones de campos
+            if(!nombreProd || precioProd === '') {
+                alert("❌ Por favor, llena al menos el Nombre del producto y el Precio.");
+                return;
+            }
+
+            // Limpieza y validación estricta de WhatsApp
+            whatsappProd = whatsappProd.replace(/[^0-9]/g, ''); // Elimina espacios, guiones y símbolos
+            if(whatsappProd.length < 8) {
+                alert("❌ El número de WhatsApp no es válido. Recuerda incluir el código 502.");
+                return;
+            }
+            if(!whatsappProd.startsWith('502') && whatsappProd.length === 8) {
+                whatsappProd = '502' + whatsappProd; // Auto-agrega código si el usuario lo olvidó
+            }
+
+            // Ajuste de stock si es ilimitado
+            if(tipoCupo === 'ilimitado') unidadesProd = "999";
+
+            const payload = {
+                action: "create",
+                nombre: nombreProd,
+                categoria: categoriaProd,
+                precio: parseFloat(precioProd),
+                unidades: parseInt(unidadesProd),
+                whatsapp: whatsappProd,
+                imagenUrl: imagenProd || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400',
+                descripcion: descProd,
+                vendedorNombre: miNombre,
+                vendedorUbicacion: `${miTorre} - Apto ${miApto}`
+            };
+
+            mostrarProgreso(40);
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                alert("🚀 ¡Publicación enviada con éxito! Aparecerá en la vitrina en un momento.");
+                
+                // Resetear campos del formulario
+                document.getElementById('prod-nombre').value = '';
+                document.getElementById('prod-precio').value = '';
+                document.getElementById('prod-descripcion').value = '';
+                document.getElementById('prod-imagen').value = '';
+                document.getElementById('status-carga-imagen').innerHTML = "Ninguna foto seleccionada";
+                document.getElementById('status-carga-imagen').className = "text-xs text-slate-400 font-medium";
+                document.getElementById('previsualizacion-contenedor').classList.add('hidden');
+                
+                cambiarModoApp('comprar');
+                setTimeout(cargarDatosNube, 1500);
+            } catch (err) {
+                console.error(err);
+                alert("Error de red al intentar guardar el producto.");
+            }
+        }
+
+        // 🔄 NUEVA FUNCIÓN: ACTUALIZAR EXISTENCIAS / RESTOCK
+        async function recargarInventarioProducto(id) {
+            const nuevasUnidades = prompt("¿Cuántas unidades totales deseas colocar ahora en inventario para este producto?:");
+            if (nuevasUnidades === null || nuevasUnidades.trim() === "" || isNaN(nuevasUnidades)) return;
+
+            mostrarProgreso(40);
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: "updateStock",
+                        id: id.toString(),
+                        unidades: parseInt(nuevasUnidades)
+                    })
+                });
+
+                alert("🔄 Inventario recargado correctamente. Tu producto vuelve a estar activo.");
+                setTimeout(cargarDatosNube, 1500);
+            } catch (err) {
+                alert("Error al procesar el Restock.");
             }
         }
 
@@ -442,7 +556,7 @@
                     })
                 });
                 
-                alert("✅ ¡Producto marcado como vendido! Los cambios se reflejarán en unos segundos.");
+                alert("✅ ¡Producto marcado como vendido!");
                 setTimeout(cargarDatosNube, 1500);
             } catch (err) {
                 console.error(err);
@@ -494,36 +608,6 @@
             } else {
                 alert("❌ Contraseña incorrecta.");
             }
-        }
-
-        async function solicitarCompraProducto(id) {
-            const p = estadoGlobal.productos.find(prod => prod.id === id.toString() || prod.id == id);
-            if(!p) return;
-
-            const miNombre = document.getElementById('vecino-nombre').value.trim();
-            const miTorre = document.getElementById('vecino-torre').value;
-            const miApto = document.getElementById('vecino-apto').value.trim();
-
-            if(!miNombre || !miTorre || !miApto) {
-                alert("⚠️ Para consultar, primero ingresa tu Nombre, Torre y Apto en el panel izquierdo.");
-                return;
-            }
-
-            const textoCompra = `👋 ¡Hola! Vi tu publicación en el *Marketplace del Edificio* 🏢\n\n` +
-                                `🛍️ *Me interesa:* ${p.nombre || p.titulo}\n` +
-                                `💰 *Precio:* Q${p.precio}\n\n` +
-                                `👤 *Soy tu vecino:* ${miNombre}\n` +
-                                `📍 *Ubicación:* ${miTorre} - Apto ${miApto}\n\n` +
-                                `¿Sigue disponible? ¡Gracias!`;
-
-            const numeroWhatsApp = p.whatsapp || p.telefono;
-            if(!numeroWhatsApp) {
-                alert("❌ Este vendedor no registró un número de WhatsApp de contacto.");
-                return;
-            }
-
-            const urlWa = `https://api.whatsapp.com/send?phone=${numeroWhatsApp.toString().replace(/\+/g, '')}&text=${encodeURIComponent(textoCompra)}`;
-            window.open(urlWa, '_blank');
         }
     </script>
 </body>
