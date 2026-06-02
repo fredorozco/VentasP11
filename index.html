@@ -18,7 +18,7 @@
         
         <div class="lg:col-span-1 space-y-6">
             <div class="bg-slate-800 p-5 rounded-xl shadow-md border border-slate-700">
-                <h2 class="text-lg font-bold text-emerald-400 mb-3">👤 Tu Identificación</h2>
+                <h2 class="text-lg font-bold text-emerald-400 mb-3">👤 Tu Identificación (Google Auth)</h2>
                 
                 <div class="space-y-3">
                     <div>
@@ -42,7 +42,7 @@
                     <div class="pt-2 border-t border-slate-700 text-xs text-slate-500 flex items-center justify-between gap-1.5 cursor-default select-none hover:text-slate-400 transition-colors">
                         <div class="flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            Sesión guardada automáticamente
+                            Sesión sincronizada
                         </div>
                         <span onclick="limpiarTodaLaInfoAdmin()" class="text-[11px] opacity-40 hover:opacity-100 cursor-pointer p-1 bg-slate-700 rounded hover:bg-slate-600 transition" title="Borrado masivo de productos (Admin)">⚙️ Masivo</span>
                     </div>
@@ -185,8 +185,9 @@
     </main>
 
     <script>
-        const API_URL = "https://api.jsonbin.io/v3/b/6a1ca71421f9ee59d2a26b55";
-        const API_KEY = "$2a$10$RHaekpDpS0pziQh6ES29xO2kxWSnOIoSzzuueTRxnrPr39KE6bCyi";
+        // 🛠️ CONFIGURACIÓN DE TU NUEVA API DE GOOGLE SHEETS
+        // Reemplaza esta URL por el enlace largo de ejecución (/exec) que te dio Google Apps Script al implementar
+        const API_URL = "Pega_Aqui_Tu_Url_De_Google_Apps_Script_Que_Termina_En_Exec";
         const IMGBB_KEY = "bdf75ed1336cd995d0426871a60a1185";
         
         // 🔑 CLAVE DEL ADMINISTRADOR para borrado masivo
@@ -263,39 +264,21 @@
             }
         }
 
+        // 🔄 LEER PRODUCTOS DESDE GOOGLE SHEETS (doGet)
         async function cargarDatosNube() {
+            if (API_URL.includes("Pega_Aqui")) return;
             mostrarProgreso(30);
             try {
-                const res = await fetch(`${API_URL}/latest`, {
-                    method: 'GET',
-                    headers: { "X-Master-Key": API_KEY, "X-Bin-Meta": "false" }
-                });
-                if(!res.ok) throw new Error("Error remoto");
+                const res = await fetch(API_URL, { method: 'GET' });
+                if(!res.ok) throw new Error("Error en Google Sheets");
                 const data = await res.json();
-                estadoGlobal = data.record ? data.record : data;
-                if(!estadoGlobal.productos) estadoGlobal.productos = [];
+                estadoGlobal.productos = data.productos || [];
                 mostrarProgreso(100);
             } catch (err) {
+                console.error(err);
                 mostrarProgreso(100);
             } finally {
                 renderizarPantallaMarketplace();
-            }
-        }
-
-        async function guardarDatosNube() {
-            mostrarProgreso(40);
-            try {
-                await fetch(API_URL, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
-                    body: JSON.stringify(estadoGlobal)
-                });
-                mostrarProgreso(100);
-                renderizarPantallaMarketplace();
-                return true;
-            } catch (err) {
-                mostrarProgreso(100);
-                return false;
             }
         }
 
@@ -365,15 +348,16 @@
                             `<span class="text-red-400 text-[11px] font-bold">🚫 Agotado</span>`;
                     }
 
+                    // 🚨 LÓGICA DE NEGOCIO: El botón de WhatsApp NO SE BLOQUEA si están preguntando. Solo si está marcado como VENDIDO.
                     let botonAccion = '';
-                    if(p.esIlimitado || p.unidadesDisponibles > 0) {
-                        botonAccion = `<button onclick="solicitarCompraProducto(${p.id})" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">💬 Solicitar por WhatsApp</button>`;
+                    if(p.estado === 'vendido') {
+                        botonAccion = `<button disabled class="w-full bg-slate-800 text-red-400 font-bold py-2 px-4 rounded-lg text-xs cursor-not-allowed border border-slate-700 text-center block">🤝 COMPRADO POR APTO ${p.compradorApto || 'Vecino'}</button>`;
                     } else {
-                        botonAccion = `<button disabled class="w-full bg-slate-800 text-slate-500 font-bold py-2 px-4 rounded-lg text-xs cursor-not-allowed border border-slate-700 text-center block">🔒 Bloqueado / Todo Reservado</button>`;
+                        botonAccion = `<button onclick="solicitarCompraProducto(${p.id})" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">💬 Preguntar / Solicitar por WhatsApp</button>`;
                     }
 
                     contenedorVitrina.innerHTML += `
-                        <div class="bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-slate-700/60 flex flex-col justify-between group">
+                        <div class="bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-slate-700/60 flex flex-col justify-between group ${p.estado === 'vendido' ? 'opacity-60' : ''}">
                             <div class="relative h-44 bg-slate-950">
                                 <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                                 <div class="absolute top-2 right-2">${badgePrecio}</div>
@@ -396,6 +380,7 @@
             const tablaMisProd = document.getElementById('tabla-mis-productos');
             if(tablaMisProd) {
                 tablaMisProd.innerHTML = '';
+                // Filtramos por el perfil del vendedor actual (Google Auth Simulado por Ubicación)
                 const misProductos = estadoGlobal.productos.filter(p => p.vendedorUbicacion === ubicacionCompletaUsuario && ubicacionCompletaUsuario !== '');
 
                 if(misProductos.length === 0) {
@@ -404,11 +389,12 @@
 
                 misProductos.forEach(p => {
                     let txtInventario = p.esIlimitado ? '∞ Ilimitado' : `${p.unidadesDisponibles} restantes de ${p.unidadesTotales}`;
+                    let renderEstado = p.estado === 'vendido' ? 
+                        `<span class="text-red-400 font-bold">[🤝 Vendido a Apto ${p.compradorApto}]</span>` : 
+                        `<span class="text-emerald-400">[Activo en Vitrina]</span>`;
                     
-                    let txtReservas = '';
-                    if(p.historialReservas && p.historialReservas.length > 0) {
-                        txtReservas = `<div class="text-[10px] text-amber-400 mt-1">Reservas por: ${p.historialReservas.join(', ')}</div>`;
-                    }
+                    let botonVendido = p.estado !== 'vendido' ? 
+                        `<button onclick="marcarComoVendidoEnSheets(${p.id})" class="bg-emerald-950/80 hover:bg-emerald-900 text-emerald-400 border border-emerald-800 px-2 py-1 rounded text-[11px] cursor-pointer">🤝 Marcar Vendido</button>` : '';
 
                     tablaMisProd.innerHTML += `
                         <tr class="hover:bg-slate-700/20 transition text-xs">
@@ -416,10 +402,10 @@
                             <td class="p-3 font-mono text-emerald-400">Q${p.precio}</td>
                             <td class="p-3 text-slate-300">
                                 <div>${txtInventario}</div>
-                                ${txtReservas}
+                                <div class="text-[10px] mt-0.5">${renderEstado}</div>
                             </td>
                             <td class="p-3 text-center flex justify-center gap-2">
-                                <button onclick="reponerStock(${p.id})" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] cursor-pointer">🔄 Reiniciar / Reponer</button>
+                                ${botonVendido}
                                 <button onclick="eliminarProducto(${p.id})" class="bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-900 px-2 py-1 rounded text-[11px] cursor-pointer">Eliminar</button>
                             </td>
                         </tr>`;
@@ -427,38 +413,77 @@
             }
         }
 
-        // 🔏 ELIMINACIÓN INDIVIDUAL: Ahora es directa y libre sin contraseña
+        // 🤝 ACCIÓN: MARCAR COMO VENDIDO EN GOOGLE SHEETS (doPost -> action: marcarVendido)
+        async function marcarComoVendidoEnSheets(id) {
+            const aptoComprador = prompt("Por favor ingresa el número de apartamento del vecino que te compró el producto:");
+            if (!aptoComprador) return;
+
+            mostrarProgreso(40);
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Necesario para Google Apps Script web apps si no se maneja CORS dinámico
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: "marcarVendido",
+                        id: id.toString(),
+                        comprador_apto: aptoComprador
+                    })
+                });
+                
+                alert("✅ ¡Producto marcado como vendido! Los cambios se reflejarán en unos segundos.");
+                setTimeout(cargarDatosNube, 1500); // Recargar datos de Sheets
+            } catch (err) {
+                console.error(err);
+                alert("Error al conectar con Google Sheets.");
+            }
+        }
+
+        // 🗑️ ACCIÓN: ELIMINAR DE GOOGLE SHEETS (doPost -> action: delete)
         async function eliminarProducto(id) {
             if(confirm("¿Estás seguro de que quieres eliminar esta publicación permanentemente de la vitrina?")) {
-                estadoGlobal.productos = estadoGlobal.productos.filter(p => p.id !== id);
-                await guardarDatosNube();
-                alert("🗑️ Publicación eliminada correctamente.");
+                mostrarProgreso(40);
+                try {
+                    await fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: "delete",
+                            id: id.toString()
+                        })
+                    });
+                    alert("🗑️ Solicitud de eliminación enviada a la Base de Datos.");
+                    setTimeout(cargarDatosNube, 1500);
+                } catch (err) {
+                    alert("Error al eliminar.");
+                }
             }
         }
 
-        // 🔑 ELIMINACIÓN MASIVA: Pide contraseña de administrador
+        // 🔑 ACCIÓN MASIVA: LIMPIAR TODO (doPost -> action: clear_all)
         async function limpiarTodaLaInfoAdmin() {
-            const pass = prompt("🔐 Función de Administración:\nPor favor ingresa la contraseña para borrar TODOS los productos de la plataforma de manera masiva:");
-            if (pass === null) return; // Cancelado
+            const pass = prompt("🔐 Función de Administración:\nPor favor ingresa la contraseña para borrar TODOS los productos de Google Sheets:");
+            if (pass === null) return;
 
             if (pass === CLAVE_ADMIN) {
-                if(confirm("⚠️ ¡ADVERTENCIA CRÍTICA!\n¿Estás completamente seguro de que quieres borrar ABSOLUTAMENTE TODOS los productos del edificio? Esta acción no se puede deshacer.")) {
-                    estadoGlobal.productos = [];
-                    await guardarDatosNube();
-                    alert("💥 Se han eliminado de manera masiva todos los artículos de la base de datos.");
+                if(confirm("⚠️ ¡ADVERTENCIA CRÍTICA!\n¿Quieres vaciar toda la hoja de cálculo?")) {
+                    mostrarProgreso(30);
+                    try {
+                        await fetch(API_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: "clear_all" })
+                        });
+                        alert("💥 Base de datos limpia.");
+                        setTimeout(cargarDatosNube, 1500);
+                    } catch (err) {
+                        alert("Error de red.");
+                    }
                 }
             } else {
-                alert("❌ Contraseña incorrecta. Acceso denegado.");
-            }
-        }
-
-        async function reponerStock(id) {
-            const prod = estadoGlobal.productos.find(p => p.id === id);
-            if(prod) {
-                prod.unidadesDisponibles = prod.unidadesTotales;
-                prod.historialReservas = [];
-                await guardarDatosNube();
-                alert("🔄 Stock restablecido correctamente.");
+                alert("❌ Contraseña incorrecta.");
             }
         }
 
@@ -471,113 +496,89 @@
             const miApto = document.getElementById('vecino-apto').value.trim();
 
             if(!miNombre || !miTorre || !miApto) {
-                alert("⚠️ Para comprar o consultar, primero ingresa tu Nombre, Torre y Apto en el panel izquierdo.");
-                cambiarModoApp('comprar');
+                alert("⚠️ Para consultar, primero ingresa tu Nombre, Torre y Apto en el panel izquierdo.");
                 return;
             }
 
-            // Registrar reserva local si no es ilimitado
-            if(!p.esIlimitado && p.unidadesDisponibles > 0) {
-                p.unidadesDisponibles--;
-                const compradorId = `${miNombre} (${miTorre}-${miApto})`;
-                if(!p.historialReservas.includes(compradorId)) {
-                    p.historialReservas.push(compradorId);
-                }
-                await guardarDatosNube();
-            }
-
-            // Enlace de la vitrina dinámico basado en dónde está abierta la app actualmente
             const linkVitrina = window.location.href;
-
-            // Texto para enviarle al vendedor por privado
             let textoCompra = `👋 ¡Hola! Vi tu publicación en el *Marketplace del Edificio* 🏢\n\n` +
                               `🛍️ *Me interesa:* ${p.nombre}\n` +
                               `💰 *Precio:* ${p.precio == 0 ? '🎁 ¡GRATIS!' : 'Q' + p.precio}\n\n` +
                               `👤 *Soy el vecino:* ${miNombre}\n` +
                               `📍 *Ubicación:* ${miTorre} - Apto ${miApto}\n\n` +
-                              `🖼️ *Foto del artículo:* ${p.imagenUrl || '(Sin Foto)'}\n\n` +
-                              `🔗 *Link del Marketplace:* ${linkVitrina}\n\n` +
                               `¿Sigue disponible? ¡Gracias!`;
 
             window.open(`https://wa.me/${p.whatsapp}?text=${encodeURIComponent(textoCompra)}`, '_blank');
         }
 
+        // 🚀 ACCIÓN: PUBLICAR EN GOOGLE SHEETS (doPost -> action: create)
         async function publicarArticuloNuevo() {
             const nombre = document.getElementById('prod-nombre').value.trim();
             const category = document.getElementById('prod-categoria').value;
             const precioRaw = document.getElementById('prod-precio').value;
             const whatsapp = document.getElementById('prod-whatsapp').value.trim();
-            const imagenUrl = document.getElementById('prod-imagen').value.trim();
             const descripcion = document.getElementById('prod-descripcion').value.trim();
-            
             const tipoCupo = document.getElementById('prod-tipo-cupo').value;
-            const unidadesInput = parseInt(document.getElementById('prod-unidades').value) || 1;
+            const unidadesRaw = document.getElementById('prod-unidades').value;
+            const imagenUrl = document.getElementById('prod-imagen').value;
 
             const miNombre = document.getElementById('vecino-nombre').value.trim();
             const miTorre = document.getElementById('vecino-torre').value;
             const miApto = document.getElementById('vecino-apto').value.trim();
 
             if(!miNombre || !miTorre || !miApto) {
-                alert("⚠️ Primero debes ingresar tu Nombre, Torre y Apartamento a la izquierda.");
+                alert("⚠️ Primero rellena tu sección de Identificación a la izquierda (Nombre, Torre y Apto).");
                 return;
             }
 
-            if(!nombre || precioRaw === "" || !whatsapp) {
-                alert("⚠️ Por favor completa los campos básicos obligatorios.");
+            if(!nombre || !whatsapp) {
+                alert("⚠️ El nombre del artículo y el WhatsApp son campos obligatorios.");
                 return;
             }
 
-            const nuevoId = estadoGlobal.productos.length > 0 ? Math.max(...estadoGlobal.productos.map(p => p.id)) + 1 : 1;
-
-            const nuevoArticulo = {
-                id: nuevoId,
-                nombre: nombre,
-                categoria: category,
-                precio: parseFloat(precioRaw),
-                whatsapp: whatsapp,
-                imagenUrl: imagenUrl,
+            const productoNuevo = {
+                id: Date.now().toString(), // Genera ID único basado en tiempo
+                titulo: nombre,
                 descripcion: descripcion,
-                vendedorNombre: miNombre,
-                vendedorUbicacion: `${miTorre} - Apto ${miApto}`,
-                esIlimitado: (tipoCupo === 'ilimitado'),
-                unidadesTotales: (tipoCupo === 'ilimitado') ? 999 : unidadesInput,
-                unidadesDisponibles: (tipoCupo === 'ilimitado') ? 999 : unidadesInput,
-                historialReservas: []
+                precio: parseFloat(precioRaw || 0),
+                categoria: category,
+                disponibilidad: tipoCupo === 'ilimitado' ? 'ilimitado' : unidadesRaw.toString(),
+                imagen_url: imagenUrl,
+                torre: miTorre,
+                apartamento: miApto,
+                vendedor: miNombre, // Aquí asocia el perfil de Google Auth/Nombre
+                telefono: whatsapp,
+                fecha_publicacion: new Date().toLocaleDateString('es-GT'),
+                estado: "disponible" // Estado inicial
             };
 
-            estadoGlobal.productos.push(nuevoArticulo);
+            mostrarProgreso(40);
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: "create",
+                        producto: productoNuevo
+                    })
+                });
 
-            // Limpieza de inputs del formulario
-            document.getElementById('prod-nombre').value = '';
-            document.getElementById('prod-precio').value = '';
-            document.getElementById('prod-imagen').value = '';
-            document.getElementById('prod-descripcion').value = '';
-            document.getElementById('prod-file-input').value = '';
-            document.getElementById('status-carga-imagen').innerHTML = "Ninguna foto seleccionada";
-            document.getElementById('previsualizacion-contenedor').classList.add('hidden');
+                alert("🚀 ¡Publicado con éxito en Google Sheets!");
+                
+                // Limpiar Formulario
+                document.getElementById('prod-nombre').value = '';
+                document.getElementById('prod-precio').value = '';
+                document.getElementById('prod-descripcion').value = '';
+                document.getElementById('prod-imagen').value = '';
+                document.getElementById('previsualizacion-contenedor').classList.add('hidden');
+                document.getElementById('status-carga-imagen').innerHTML = "Ninguna foto seleccionada";
+                document.getElementById('status-carga-imagen').className = "text-xs text-slate-400 font-medium";
 
-            await guardarDatosNube();
-            cambiarModoApp('comprar');
-
-            // Enlace de la vitrina dinámico
-            const linkVitrina = window.location.href;
-
-            // 📣 POST COMPARTIDO DE WHATSAPP CON LINK, DATOS Y FOTO INCORPORADA
-            const textoWhatsApp = `🏢 *NUEVO PRODUCTO EN EL MARKETPLACE* 🏢\n\n` +
-                                  `🛍️ *Producto:* ${nombre}\n` +
-                                  `🗂️ *Categoría:* ${category}\n` +
-                                  `💰 *Precio:* ${parseFloat(precioRaw) == 0 ? '🎁 ¡GRATIS!' : 'Q' + precioRaw}\n` +
-                                  `📍 *Ubicación:* ${miTorre} - Apto ${miApto}\n` +
-                                  `👤 *Vendedor:* ${miNombre}\n` +
-                                  `🖼️ *Foto del producto:* ${imagenUrl || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400'}\n\n` +
-                                  `${descripcion ? '📝 *Detalles:* ' + descripcion + '\n\n' : ''}` +
-                                  `🔗 *Entra a ver la vitrina aquí:* ${linkVitrina}\n\n` +
-                                  `📱 *Contacto directo para comprar:* https://wa.me/${whatsapp}`;
-
-            const compartir = confirm("✨ ¡Publicado con éxito en la vitrina digital del edificio!\n\n¿Deseas abrir WhatsApp ahora para compartirlo de manera interactiva en el grupo del edificio?");
-            
-            if (compartir) {
-                window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWhatsApp)}`, '_blank');
+                cambiarModoApp('comprar');
+                setTimeout(cargarDatosNube, 1500);
+            } catch (err) {
+                alert("Error de conexión al guardar el producto.");
             }
         }
     </script>
