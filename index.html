@@ -381,53 +381,54 @@
             }
 
             // SECCIÓN MIS PRODUCTOS PERSONALIZADOS
-            const tablaMisProd = document.getElementById('tabla-mis-productos');
-            if(tablaMisProd) {
-                tablaMisProd.innerHTML = '';
-                
-                if (!miTorre || !miApto) {
-                    tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">Configura tu Torre y Apto a la izquierda para ver tus productos.</td></tr>`;
-                    return;
-                }
+const tablaMisProd = document.getElementById('tabla-mis-productos');
+if(tablaMisProd) {
+    tablaMisProd.innerHTML = '';
+    
+    if (!miTorre || !miApto) {
+        tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">Configura tu Torre y Apto a la izquierda para ver tus productos.</td></tr>`;
+        return;
+    }
 
-                const filtroUbicacion = `${miTorre} - Apto ${miApto}`.toLowerCase().replace(/\s+/g, '');
+    // Buscaremos coincidencias más abiertas y limpias de caracteres
+    const torreLimpia = miTorre.toLowerCase().replace(/[^a-z0-9]/g, ''); // "torreb"
+    const aptoLimpio = miApto.toLowerCase().trim(); // "1005"
 
-                const misProductos = estadoGlobal.productos.filter(p => {
-                    const ubi = (p.vendedorUbicacion || '').toLowerCase().replace(/\s+/g, '');
-                    return ubi === filtroUbicacion;
-                });
+    const misProductos = estadoGlobal.productos.filter(p => {
+        const ubiData = (p.vendedorUbicacion || '').toLowerCase();
+        // Verifica si la ubicación del Excel contiene tanto la torre como el apartamento
+        return ubiData.includes(torreLimpia) || ubiData.includes(aptoLimpio);
+    });
 
-                if(misProductos.length === 0) {
-                    tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">No tienes productos activos asociados a tu apartamento.</td></tr>`;
-                }
+    if(misProductos.length === 0) {
+        tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">No tienes productos activos asociados a tu apartamento.</td></tr>`;
+    }
 
-                misProductos.forEach(p => {
-                    const tituloProd = p.nombre || 'Sin título';
-                    const stockActual = p.unidadesDisponibles !== undefined ? p.unidadesDisponibles : 1;
-                    let txtInventario = p.esIlimitado ? '∞ Ilimitado' : `${stockActual} restantes`;
-                    let renderEstado = (p.estado || 'Disponible');
+    misProductos.forEach(p => {
+        const tituloProd = p.nombre || 'Sin título';
+        const stockActual = p.unidadesDisponibles !== undefined ? p.unidadesDisponibles : 1;
+        let txtInventario = p.esIlimitado ? '∞ Ilimitado' : `${stockActual} restantes`;
+        let renderEstado = (p.estado || 'Disponible');
 
-                    let botonVendido = renderEstado.toLowerCase() !== 'vendido' ? 
-                        `<button onclick="marcarComoVendidoEnSheets('${p.id}')" class="bg-emerald-950/80 hover:bg-emerald-900 text-emerald-400 border border-emerald-800 px-2 py-1 rounded text-[11px] cursor-pointer">🤝 Marcar Vendido</button>` : '';
+        let botonVendido = renderEstado.toLowerCase() !== 'vendido' ? 
+            `<button onclick="marcarComoVendidoEnSheets('${p.id}')" class="bg-emerald-950/80 hover:bg-emerald-900 text-emerald-400 border border-emerald-800 px-2 py-1 rounded text-[11px] cursor-pointer">🤝 Marcar Vendido</button>` : '';
 
-                    tablaMisProd.innerHTML += `
-                        <tr class="hover:bg-slate-700/20 transition text-xs">
-                            <td class="p-3 font-semibold text-white">${tituloProd}</td>
-                            <td class="p-3 font-mono text-emerald-400">Q${p.precio || 0}</td>
-                            <td class="p-3 text-slate-300">
-                                <div>${txtInventario}</div>
-                                <div class="text-[10px] mt-0.5 text-slate-400">[${renderEstado}]</div>
-                            </td>
-                            <td class="p-3 text-center flex justify-center items-center gap-2">
-                                <button onclick="recargarInventarioProducto('${p.id}')" class="bg-blue-950 hover:bg-blue-900 text-blue-400 border border-blue-800 px-2 py-1 rounded text-[11px] cursor-pointer">🔄 Restock</button>
-                                ${botonVendido}
-                                <button onclick="eliminarProducto('${p.id}')" class="bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-900 px-2 py-1 rounded text-[11px] cursor-pointer">Eliminar</button>
-                            </td>
-                        </tr>`;
-                });
-            }
-        }
-
+        tablaMisProd.innerHTML += `
+            <tr class="hover:bg-slate-700/20 transition text-xs">
+                <td class="p-3 font-semibold text-white">${tituloProd}</td>
+                <td class="p-3 font-mono text-emerald-400">Q${p.precio || 0}</td>
+                <td class="p-3 text-slate-300">
+                    <div>${txtInventario}</div>
+                    <div class="text-[10px] mt-0.5 text-slate-400">[${renderEstado}]</div>
+                </td>
+                <td class="p-3 text-center flex justify-center items-center gap-2">
+                    <button onclick="recargarInventarioProducto('${p.id}')" class="bg-blue-950 hover:bg-blue-900 text-blue-400 border border-blue-800 px-2 py-1 rounded text-[11px] cursor-pointer">🔄 Restock</button>
+                    ${botonVendido}
+                    <button onclick="eliminarProducto('${p.id}')" class="bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-900 px-2 py-1 rounded text-[11px] cursor-pointer">Eliminar</button>
+                </td>
+            </tr>`;
+    });
+}
         async function solicitarCompraProducto(id) {
             const p = estadoGlobal.productos.find(prod => prod.id === id.toString() || prod.id == id);
             if(!p) return;
