@@ -518,10 +518,92 @@
         }
 
         // AGREGADAS FUNCIONES FALTANTES PARA EVITAR FUGAS DE REFERENCE ERROR
-        function marcarComoVendidoEnSheets(id) { console.log("Vendiendo...", id); }
-        function recargarInventarioProducto(id) { console.log("Restock...", id); }
-        function eliminarProducto(id) { console.log("Eliminando...", id); }
-        function limpiarTodaLaInfoAdmin() { console.log("Llamando limpieza masiva..."); }
+       // 🔄 BOTÓN RESTOCK: Suma inventario o cambia el estado a Disponible
+        async function recargarInventarioProducto(id) {
+            const nuevasUnidades = prompt("¿Cuántas unidades deseas añadir al inventario?", "5");
+            if (nuevasUnidades === null) return; // Cancelado por el usuario
+            
+            const cantidad = parseInt(nuevasUnidades);
+            if (isNaN(cantidad) || cantidad <= 0) {
+                alert("❌ Por favor ingresa un número válido mayor a 0.");
+                return;
+            }
+
+            mostrarProgreso(40);
+            try {
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "update_stock",
+                        id: id.toString(),
+                        unidades: cantidad
+                    })
+                });
+                if(!res.ok) throw new Error();
+                alert("🔄 ¡Inventario actualizado correctamente!");
+                cargarDatosNube();
+            } catch (err) {
+                alert("❌ Error al actualizar el inventario en Google Sheets.");
+            } finally {
+                mostrarProgreso(100);
+            }
+        }
+
+        // 🤝 BOTÓN MARCAR VENDIDO: Cambia el estado a "Vendido" y pone el stock en 0
+        async function marcarComoVendidoEnSheets(id) {
+            if (!confirm("¿Seguro que deseas marcar este producto como VENDIDO? Se ocultará la opción de compra.")) return;
+
+            mostrarProgreso(40);
+            try {
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "sell",
+                        id: id.toString()
+                    })
+                });
+                if(!res.ok) throw new Error();
+                alert("🤝 ¡Producto marcado como vendido!");
+                cargarDatosNube();
+            } catch (err) {
+                alert("❌ Error al cambiar el estado a vendido.");
+            } finally {
+                mostrarProgreso(100);
+            }
+        }
+
+        // 🗑️ BOTÓN ELIMINAR: Borra por completo la fila del producto
+        async function eliminarProducto(id) {
+            if (!confirm("⚠️ ¿Estás completamente seguro de eliminar este producto? Esta acción no se puede deshacer.")) return;
+
+            mostrarProgreso(40);
+            try {
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "delete",
+                        id: id.toString()
+                    })
+                });
+                if(!res.ok) throw new Error();
+                alert("🗑️ Producto eliminado correctamente.");
+                cargarDatosNube();
+            } catch (err) {
+                alert("❌ Error al eliminar el artículo.");
+            } finally {
+                mostrarProgreso(100);
+            }
+        }
+
+        // ⚙️ BOTÓN MASIVO (ADMIN/MANTENIMIENTO)
+        function limpiarTodaLaInfoAdmin() {
+            const pass = prompt("Introduce la clave de administrador para purgar:");
+            if (pass === CLAVE_ADMIN) {
+                alert("Acceso concedido. (Aquí puedes mapear una acción de borrado total si tu Sheets la soporta)");
+            } else if (pass !== null) {
+                alert("❌ Clave incorrecta.");
+            }
+        }
     </script>
 </body>
 </html>
