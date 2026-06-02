@@ -320,7 +320,6 @@
         function renderizarPantallaMarketplace() {
             const miTorre = document.getElementById('vecino-torre').value;
             const miApto = document.getElementById('vecino-apto').value.trim();
-            const ubicacionCompletaUsuario = (miTorre && miApto) ? `${miTorre} - Apto ${miApto}` : '';
 
             const contenedorVitrina = document.getElementById('contenedor-vitrina-productos');
             if(contenedorVitrina) {
@@ -339,7 +338,6 @@
                         `<span class="bg-emerald-950 text-emerald-400 border border-emerald-700 text-xs font-mono font-bold px-2.5 py-1 rounded-md">Q${p.precio}</span>`;
                     
                     let badgeStock = '';
-                    // Interceptamos 999 o texto "ilimitado" para renderizar correctamente
                     if(p.esIlimitado || p.disponibilidad === 'ilimitado' || p.unidadesDisponibles == 999 || p.unidadesTotales == 999) {
                         badgeStock = `<span class="text-slate-400 text-[11px]">📦 Disp: Ilimitado</span>`;
                     } else {
@@ -379,20 +377,33 @@
             const tablaMisProd = document.getElementById('tabla-mis-productos');
             if(tablaMisProd) {
                 tablaMisProd.innerHTML = '';
+                
+                // Normalización de cadenas de texto para hacer la comparación flexible de la base de datos antigua
+                const torreInputLimpia = miTorre.toLowerCase().replace(/\s+/g, '');
+                const aptoInputLimpio = miApto.toLowerCase().replace(/\s+/g, '');
+
                 const misProductos = estadoGlobal.productos.filter(p => {
-                    const ubi = p.vendedorUbicacion || `${p.torre} - Apto ${p.apartamento}`;
-                    return ubi === ubicacionCompletaUsuario && ubicacionCompletaUsuario !== '';
+                    if (!p.vendedorUbicacion) return false;
+
+                    // Limpieza del string largo "Torre B - Apto 1005" -> "torreb-apto1005"
+                    const ubiDataLimpia = p.vendedorUbicacion.toLowerCase().replace(/\s+/g, '');
+
+                    // Comprobamos si contiene de forma segura los fragmentos ingresados en los inputs
+                    const contieneTorre = ubiDataLimpia.includes(torreInputLimpia);
+                    const contieneApto = ubiDataLimpia.includes(aptoInputLimpio);
+
+                    return contieneTorre && contieneApto && aptoInputLimpio !== '';
                 });
 
                 if(misProductos.length === 0) {
-                    tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">Elige tu Torre e ingresa tu Apto a la izquierda para gestionar tus publicaciones.</td></tr>`;
+                    tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">No se encontraron productos activos para la ubicación configurada.</td></tr>`;
                 }
 
                 misProductos.forEach(p => {
-                    let txtInventario = (p.esIlimitado || p.disponibilidad === 'ilimitado' || p.unidadesDisponibles == 999) ? '∞ Ilimitado' : `${p.unidadesDisponibles} restantes de ${p.unidadesTotales}`;
+                    let txtInventario = (p.esIlimitado || p.disponibilidad === 'ilimitado' || p.unidadesDisponibles == 999) ? '∞ Ilimitado' : `${p.unidadesDisponibles} restantes`;
                     let renderEstado = p.estado === 'vendido' ? 
-                        `<span class="text-red-400 font-bold">[🤝 Vendido a Apto ${p.compradorApto || 'Vecino'}]</span>` : 
-                        `<span class="text-emerald-400">[Activo en Vitrina]</span>`;
+                        `<span class="text-red-400 font-bold">[🤝 Vendido]</span>` : 
+                        `<span class="text-emerald-400">[Activo]</span>`;
                     
                     let botonVendido = p.estado !== 'vendido' ? 
                         `<button onclick="marcarComoVendidoEnSheets(${p.id})" class="bg-emerald-950/80 hover:bg-emerald-900 text-emerald-400 border border-emerald-800 px-2 py-1 rounded text-[11px] cursor-pointer">🤝 Marcar Vendido</button>` : '';
@@ -505,77 +516,14 @@
                                 `📍 *Ubicación:* ${miTorre} - Apto ${miApto}\n\n` +
                                 `¿Sigue disponible? ¡Gracias!`;
 
-            const telefonoLimpio = (p.telefono || '').toString().replace(/\D/g, '');
-            window.open(`https://wa.me/${telefonoLimpio}?text=${encodeURIComponent(textoCompra)}`, '_blank');
-        }
-
-        async function publicarArticuloNuevo() {
-            const miNombre = document.getElementById('vecino-nombre').value.trim();
-            const miTorre = document.getElementById('vecino-torre').value;
-            const miApto = document.getElementById('vecino-apto').value.trim();
-
-            if(!miNombre || !miTorre || !miApto) {
-                alert("⚠️ Primero completa tus datos en el módulo de Identificación a la izquierda.");
+            const numeroWhatsApp = p.whatsapp || p.telefono;
+            if(!numeroWhatsApp) {
+                alert("❌ Este vendedor no registró un número de WhatsApp de contacto.");
                 return;
             }
 
-            const nombre = document.getElementById('prod-nombre').value.trim();
-            const category = document.getElementById('prod-categoria').value;
-            const precioRaw = document.getElementById('prod-precio').value;
-            const tipoCupo = document.getElementById('prod-tipo-cupo').value;
-            const unidadesRaw = document.getElementById('prod-unidades').value;
-            const whatsapp = document.getElementById('prod-whatsapp').value.trim();
-            const imagenUrl = document.getElementById('prod-imagen').value;
-            const descripcion = document.getElementById('prod-descripcion').value.trim();
-
-            if(!nombre || !whatsapp) {
-                alert("⚠️ El nombre del artículo y el número de WhatsApp son obligatorios.");
-                return;
-            }
-
-            mostrarProgreso(20);
-
-            const productoNuevo = {
-                action: "insert",
-                id: Date.now().toString(),
-                titulo: nombre,
-                descripcion: descripcion,
-                precio: parseFloat(precioRaw || 0),
-                categoria: category,
-                disponibilidad: tipoCupo === 'ilimitado' ? 'ilimitado' : unidadesRaw.toString(),
-                imagen_url: imagenUrl || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400',
-                torre: miTorre,
-                apartamento: miApto,
-                vendedor: miNombre,
-                telefono: whatsapp,
-                fecha_publicacion: new Date().toLocaleDateString('es-GT'),
-                estado: "disponible"
-            };
-
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(productoNuevo)
-                });
-
-                alert("🚀 ¡Publicación enviada con éxito!");
-                
-                // Limpiar campos del formulario
-                document.getElementById('prod-nombre').value = '';
-                document.getElementById('prod-precio').value = '';
-                document.getElementById('prod-descripcion').value = '';
-                document.getElementById('prod-imagen').value = '';
-                document.getElementById('status-carga-imagen').innerHTML = "Ninguna foto seleccionada";
-                document.getElementById('status-carga-imagen').className = "text-xs text-slate-400 font-medium";
-                document.getElementById('previsualizacion-contenedor').classList.add('hidden');
-                
-                cambiarModoApp('comprar');
-                setTimeout(cargarDatosNube, 1500);
-            } catch (err) {
-                alert("Ocurrió un problema al subir tu producto.");
-            }
+            const urlWa = `https://api.whatsapp.com/send?phone=${numeroWhatsApp.toString().replace(/\+/g, '')}&text=${encodeURIComponent(textoCompra)}`;
+            window.open(urlWa, '_blank');
         }
     </script>
 </body>
