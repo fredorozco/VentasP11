@@ -446,7 +446,7 @@
                 return;
             }
 
-            const textoWhatsApp = `¡Hola vecino! Mi nombre es ${miNombre} de la ${miTorre}, apartamento ${miApto}. Estoy interesado en tu producto: *${p.nombre}* publicado en el Market de Parque 11. ¿Sigue disponible?`;
+            const textoWhatsApp = `¡Hola vecin@! Mi nombre es ${miNombre} de la ${miTorre}, apartamento ${miApto}. Estoy interesado en tu producto: *${p.nombre}* publicado en el Market de Parque 11. ¿Sigue disponible?`;
             const telefonoDestino = p.whatsapp || '';
             const urlFinal = `https://wa.me/${telefonoDestino}?text=${encodeURIComponent(textoWhatsApp)}`;
             window.open(urlFinal, '_blank');
