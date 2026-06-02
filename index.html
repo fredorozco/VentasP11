@@ -541,7 +541,7 @@
                 });
                 if(!res.ok) throw new Error();
                 alert("🔄 ¡Inventario actualizado correctamente!");
-                cargarDatosNube();
+                await cargarDatosNube();
             } catch (err) {
                 alert("❌ Error al actualizar el inventario en Google Sheets.");
             } finally {
@@ -564,7 +564,7 @@
                 });
                 if(!res.ok) throw new Error();
                 alert("🤝 ¡Producto marcado como vendido!");
-                cargarDatosNube();
+                await cargarDatosNube();
             } catch (err) {
                 alert("❌ Error al cambiar el estado a vendido.");
             } finally {
@@ -587,7 +587,7 @@
                 });
                 if(!res.ok) throw new Error();
                 alert("🗑️ Producto eliminado correctamente.");
-                cargarDatosNube();
+                await cargarDatosNube();
             } catch (err) {
                 alert("❌ Error al eliminar el artículo.");
             } finally {
