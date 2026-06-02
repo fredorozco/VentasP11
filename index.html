@@ -208,7 +208,7 @@
             localStorage.setItem('m_vecino_nombre', nom);
             localStorage.setItem('m_vecino_torre', torre);
             localStorage.setItem('m_vecino_apto', apto);
-            renderizarPantallaMarketplace();
+            renderPantallaMarketplace();
         }
 
         function alternarInputUnidades() {
@@ -274,7 +274,7 @@
                 console.error(err);
                 mostrarProgreso(100);
             } finally {
-                renderizarPantallaMarketplace();
+                renderPantallaMarketplace();
             }
         }
 
@@ -296,7 +296,7 @@
                 vistaV.classList.remove('hidden');
                 vistaC.classList.add('hidden');
             }
-            renderizarPantallaMarketplace();
+            renderPantallaMarketplace();
         }
 
         function filtrarPorCategoria(cat) {
@@ -311,10 +311,11 @@
                 }
             });
             document.getElementById('titulo-categoria-activa').textContent = cat;
-            renderizarPantallaMarketplace();
+            renderPantallaMarketplace();
         }
 
-        function renderizarPantallaMarketplace() {
+        // 🚀 CORREGIDO: MAPEADO ADAPTADO 100% A TU EXCEL / GOOGLE SHEETS
+        function renderPantallaMarketplace() {
             const miTorre = document.getElementById('vecino-torre').value;
             const miApto = document.getElementById('vecino-apto').value.trim();
 
@@ -329,41 +330,49 @@
                 }
 
                 filtered.forEach(p => {
-                    const imgUrl = p.imagenUrl || p.imagen_url || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400';
-                    const badgePrecio = p.precio == 0 ? 
+                    // Variables adaptadas al orden exacto de tus capturas de Sheets
+                    const tituloProd = p.titulo || p.nombre || 'Producto sin título';
+                    const descProd = p.descripcion || 'Sin detalles.';
+                    const precioProd = p.precio !== undefined ? p.precio : 0;
+                    const stockActual = p.disponibilidad !== undefined ? p.disponibilidad : 1;
+                    const imgUrl = p.imagen_url || p.imagenUrl || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400';
+                    const estadoActual = (p.estado || '').toLowerCase();
+                    const ubicacionProd = `${p.torre || ''} - Apto ${p.apartamento || ''}`;
+
+                    const badgePrecio = precioProd == 0 ? 
                         `<span class="bg-violet-950 text-violet-300 border border-violet-700 text-xs font-black px-2.5 py-1 rounded-md">🎁 GRATIS</span>` : 
-                        `<span class="bg-emerald-950 text-emerald-400 border border-emerald-700 text-xs font-mono font-bold px-2.5 py-1 rounded-md">Q${p.precio}</span>`;
+                        `<span class="bg-emerald-950 text-emerald-400 border border-emerald-700 text-xs font-mono font-bold px-2.5 py-1 rounded-md">Q${precioProd}</span>`;
                     
                     let badgeStock = '';
-                    if(p.esIlimitado || p.disponibilidad === 'ilimitado' || p.unidadesDisponibles == 999 || p.unidadesTotales == 999) {
+                    if(stockActual == 999) {
                         badgeStock = `<span class="text-slate-400 text-[11px]">📦 Disp: Ilimitado</span>`;
                     } else {
-                        badgeStock = p.unidadesDisponibles > 0 ? 
-                            `<span class="text-emerald-400 text-[11px] font-bold">📦 Disp: ${p.unidadesDisponibles} unid.</span>` : 
+                        badgeStock = stockActual > 0 ? 
+                            `<span class="text-emerald-400 text-[11px] font-bold">📦 Disp: ${stockActual} unid.</span>` : 
                             `<span class="text-red-400 text-[11px] font-bold">🚫 Agotado</span>`;
                     }
 
                     let botonAccion = '';
-                    if(p.estado === 'vendido') {
-                        botonAccion = `<button disabled class="w-full bg-slate-800 text-red-400 font-bold py-2 px-4 rounded-lg text-xs cursor-not-allowed border border-slate-700 text-center block">🤝 COMPRADO POR APTO ${p.compradorApto || 'Vecino'}</button>`;
+                    if(estadoActual === 'vendido' || stockActual <= 0) {
+                        botonAccion = `<button disabled class="w-full bg-slate-800 text-red-400 font-bold py-2 px-4 rounded-lg text-xs cursor-not-allowed border border-slate-700 text-center block">🤝 VENDIDO O AGOTADO</button>`;
                     } else {
-                        botonAccion = `<button onclick="solicitarCompraProducto(${p.id})" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">💬 Preguntar / Solicitar por WhatsApp</button>`;
+                        botonAccion = `<button onclick="solicitarCompraProducto('${p.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">💬 Preguntar / Solicitar por WhatsApp</button>`;
                     }
 
                     contenedorVitrina.innerHTML += `
-                        <div class="bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-slate-700/60 flex flex-col justify-between group ${p.estado === 'vendido' ? 'opacity-60' : ''}">
+                        <div class="bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-slate-700/60 flex flex-col justify-between group ${estadoActual === 'vendido' ? 'opacity-60' : ''}">
                             <div class="relative h-44 bg-slate-950">
-                                <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400'">
                                 <div class="absolute top-2 right-2">${badgePrecio}</div>
-                                <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded text-[10px] text-slate-300">📍 Ubic: ${p.vendedorUbicacion || (p.torre + ' - Apto ' + p.apartamento)}</div>
+                                <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded text-[10px] text-slate-300">📍 ${ubicacionProd}</div>
                             </div>
                             <div class="p-4 flex-1 flex flex-col justify-between gap-4">
                                 <div>
                                     <div class="flex justify-between items-start mb-1">
-                                        <h3 class="font-bold text-base text-white truncate w-2/3">${p.nombre || p.titulo}</h3>
+                                        <h3 class="font-bold text-base text-white truncate w-2/3">${tituloProd}</h3>
                                         ${badgeStock}
                                     </div>
-                                    <p class="text-xs text-slate-400 line-clamp-2">${p.descripcion || 'Sin detalles.'}</p>
+                                    <p class="text-xs text-slate-400 line-clamp-2">${descProd}</p>
                                 </div>
                                 <div class="pt-3 border-t border-slate-700/50">${botonAccion}</div>
                             </div>
@@ -371,39 +380,45 @@
                 });
             }
 
+            // CONTROL ADAPTADO PARA MIS PRODUCTOS (Filtrando por Torre y Apartamento dinámicos)
             const tablaMisProd = document.getElementById('tabla-mis-productos');
             if(tablaMisProd) {
                 tablaMisProd.innerHTML = '';
                 
+                if (!miTorre || !miApto) {
+                    tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">Configura tu Torre y Apto a la izquierda para ver tus productos.</td></tr>`;
+                    return;
+                }
+
                 const torreInputLimpia = miTorre.toLowerCase().replace(/\s+/g, '');
                 const aptoInputLimpio = miApto.toLowerCase().replace(/\s+/g, '');
 
                 const misProductos = estadoGlobal.productos.filter(p => {
-                    if (!p.vendedorUbicacion) return false;
-                    const ubiDataLimpia = p.vendedorUbicacion.toLowerCase().replace(/\s+/g, '');
-                    return ubiDataLimpia.includes(torreInputLimpia) && ubiDataLimpia.includes(aptoInputLimpio) && aptoInputLimpio !== '';
+                    const t = (p.torre || '').toLowerCase().replace(/\s+/g, '');
+                    const a = (p.apartamento || '').toLowerCase().replace(/\s+/g, '');
+                    return t.includes(torreInputLimpia) && a.includes(aptoInputLimpio);
                 });
 
                 if(misProductos.length === 0) {
-                    tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">No se encontraron productos activos para la ubicación configurada.</td></tr>`;
+                    tablaMisProd.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500 text-xs">No tienes productos activos asociados a tu apartamento.</td></tr>`;
                 }
 
                 misProductos.forEach(p => {
-                    let txtInventario = (p.esIlimitado || p.disponibilidad === 'ilimitado' || p.unidadesDisponibles == 999) ? '∞ Ilimitado' : `${p.unidadesDisponibles} restantes`;
-                    let renderEstado = p.estado === 'vendido' ? 
-                        `<span class="text-red-400 font-bold">[🤝 Vendido / Agotado]</span>` : 
-                        `<span class="text-emerald-400">[Activo]</span>`;
-                    
-                    let botonVendido = p.estado !== 'vendido' ? 
+                    const tituloProd = p.titulo || p.nombre || 'Sin título';
+                    const stockActual = p.disponibilidad !== undefined ? p.disponibilidad : 1;
+                    let txtInventario = stockActual == 999 ? '∞ Ilimitado' : `${stockActual} restantes`;
+                    let renderEstado = (p.estado || 'Disponible');
+
+                    let botonVendido = renderEstado.toLowerCase() !== 'vendido' ? 
                         `<button onclick="marcarComoVendidoEnSheets(${p.id})" class="bg-emerald-950/80 hover:bg-emerald-900 text-emerald-400 border border-emerald-800 px-2 py-1 rounded text-[11px] cursor-pointer">🤝 Marcar Vendido</button>` : '';
 
                     tablaMisProd.innerHTML += `
                         <tr class="hover:bg-slate-700/20 transition text-xs">
-                            <td class="p-3 font-semibold text-white">${p.nombre || p.titulo}</td>
-                            <td class="p-3 font-mono text-emerald-400">Q${p.precio}</td>
+                            <td class="p-3 font-semibold text-white">${tituloProd}</td>
+                            <td class="p-3 font-mono text-emerald-400">Q${p.precio || 0}</td>
                             <td class="p-3 text-slate-300">
                                 <div>${txtInventario}</div>
-                                <div class="text-[10px] mt-0.5">${renderEstado}</div>
+                                <div class="text-[10px] mt-0.5 text-slate-400">[${renderEstado}]</div>
                             </td>
                             <td class="p-3 text-center flex justify-center items-center gap-2">
                                 <button onclick="recargarInventarioProducto(${p.id})" class="bg-blue-950 hover:bg-blue-900 text-blue-400 border border-blue-800 px-2 py-1 rounded text-[11px] cursor-pointer">🔄 Restock</button>
@@ -428,18 +443,18 @@
                 return;
             }
 
-            const textoWhatsApp = `¡Hola vecino! Mi nombre es ${miNombre} de la ${miTorre}, apartamento ${miApto}. Estoy interesado en tu producto: *${p.nombre || p.titulo}* publicado en el Market de Parque 11. ¿Sigue disponible?`;
-            const urlFinal = `https://wa.me/${p.whatsapp || p.telefono}?text=${encodeURIComponent(textoWhatsApp)}`;
+            const textoWhatsApp = `¡Hola vecino! Mi nombre es ${miNombre} de la ${miTorre}, apartamento ${miApto}. Estoy interesado en tu producto: *${p.titulo || p.nombre}* publicado en el Market de Parque 11. ¿Sigue disponible?`;
+            const telefonoDestino = p.telefono || p.whatsapp || '';
+            const urlFinal = `https://wa.me/${telefonoDestino}?text=${encodeURIComponent(textoWhatsApp)}`;
             window.open(urlFinal, '_blank');
         }
 
-        // 🚀 NUEVA FUNCIÓN CORREGIDA: ENVIAR PRODUCTO A GOOGLE SHEETS
+        // ENVÍO DE DATOS RESPETANDO EL NUEVO MAREO DE TU SCRIPT DE GOOGLE
         async function publicarArticuloNuevo() {
             const miNombre = document.getElementById('vecino-nombre').value.trim();
             const miTorre = document.getElementById('vecino-torre').value;
             const miApto = document.getElementById('vecino-apto').value.trim();
 
-            // Validar Perfil
             if(!miNombre || !miTorre || !miApto) {
                 alert("❌ ERROR: Debes rellenar tus datos de Identificación (Nombre, Torre y Apto) en el panel izquierdo antes de publicar.");
                 return;
@@ -454,36 +469,34 @@
             const imagenProd = document.getElementById('prod-imagen').value;
             const descProd = document.getElementById('prod-descripcion').value.trim();
 
-            // Validaciones de campos
             if(!nombreProd || precioProd === '') {
                 alert("❌ Por favor, llena al menos el Nombre del producto y el Precio.");
                 return;
             }
 
-            // Limpieza y validación estricta de WhatsApp
-            whatsappProd = whatsappProd.replace(/[^0-9]/g, ''); // Elimina espacios, guiones y símbolos
+            whatsappProd = whatsappProd.replace(/[^0-9]/g, '');
             if(whatsappProd.length < 8) {
-                alert("❌ El número de WhatsApp no es válido. Recuerda incluir el código 502.");
+                alert("❌ El número de WhatsApp no es válido. Recuerda incluir el código de área (ej: 502).");
                 return;
             }
             if(!whatsappProd.startsWith('502') && whatsappProd.length === 8) {
-                whatsappProd = '502' + whatsappProd; // Auto-agrega código si el usuario lo olvidó
+                whatsappProd = '502' + whatsappProd;
             }
 
-            // Ajuste de stock si es ilimitado
             if(tipoCupo === 'ilimitado') unidadesProd = "999";
 
             const payload = {
                 action: "create",
-                nombre: nombreProd,
-                categoria: categoriaProd,
-                precio: parseFloat(precioProd),
-                unidades: parseInt(unidadesProd),
-                whatsapp: whatsappProd,
-                imagenUrl: imagenProd || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400',
+                nombre: nombreProd,         // Se mapea a 'titulo' en la hoja
                 descripcion: descProd,
+                precio: parseFloat(precioProd),
+                categoria: categoriaProd,
+                unidades: parseInt(unidadesProd), // Se mapea a 'disponibilidad'
+                imagenUrl: imagenProd || 'https://images.unsplash.com/photo-1546213290-e1b492ab3eee?w=400',
+                vendedorTorre: miTorre,
+                vendedorApto: miApto,
                 vendedorNombre: miNombre,
-                vendedorUbicacion: `${miTorre} - Apto ${miApto}`
+                whatsapp: whatsappProd      // Se mapea a 'telefono'
             };
 
             mostrarProgreso(40);
@@ -494,119 +507,78 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
-                alert("🚀 ¡Publicación enviada con éxito! Aparecerá en la vitrina en un momento.");
                 
-                // Resetear campos del formulario
+                mostrarProgreso(100);
+                alert("🚀 ¡Producto publicado exitosamente! Refrescando la vitrina...");
+                
+                // Limpiar campos del formulario
                 document.getElementById('prod-nombre').value = '';
                 document.getElementById('prod-precio').value = '';
-                document.getElementById('prod-descripcion').value = '';
                 document.getElementById('prod-imagen').value = '';
+                document.getElementById('prod-descripcion').value = '';
+                document.getElementById('prod-whatsapp').value = '';
                 document.getElementById('status-carga-imagen').innerHTML = "Ninguna foto seleccionada";
-                document.getElementById('status-carga-imagen').className = "text-xs text-slate-400 font-medium";
                 document.getElementById('previsualizacion-contenedor').classList.add('hidden');
                 
-                cambiarModoApp('comprar');
-                setTimeout(cargarDatosNube, 1500);
+                // Recargar para traer los datos limpios
+                setTimeout(() => {
+                    cambiarModoApp('comprar');
+                    cargarDatosNube();
+                }, 800);
+
             } catch (err) {
                 console.error(err);
-                alert("Error de red al intentar guardar el producto.");
+                alert("❌ Error al conectar con el servidor.");
+                mostrarProgreso(100);
             }
         }
 
-        // 🔄 NUEVA FUNCIÓN: ACTUALIZAR EXISTENCIAS / RESTOCK
-        async function recargarInventarioProducto(id) {
-            const nuevasUnidades = prompt("¿Cuántas unidades totales deseas colocar ahora en inventario para este producto?:");
-            if (nuevasUnidades === null || nuevasUnidades.trim() === "" || isNaN(nuevasUnidades)) return;
-
-            mostrarProgreso(40);
+        // --- FUNCIONES ACCESORIAS DE ADMINISTRACIÓN ---
+        async function ejecutarAccionPost(datos) {
+            mostrarProgreso(50);
             try {
                 await fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: "updateStock",
-                        id: id.toString(),
-                        unidades: parseInt(nuevasUnidades)
-                    })
+                    body: JSON.stringify(datos)
                 });
-
-                alert("🔄 Inventario recargado correctamente. Tu producto vuelve a estar activo.");
-                setTimeout(cargarDatosNube, 1500);
-            } catch (err) {
-                alert("Error al procesar el Restock.");
+                mostrarProgreso(100);
+                setTimeout(() => { cargarDatosNube(); }, 500);
+            } catch(e) {
+                console.error(e);
+                mostrarProgreso(100);
             }
         }
 
-        async function marcarComoVendidoEnSheets(id) {
-            const aptoComprador = prompt("Por favor ingresa el número de apartamento del vecino que te compró el producto:");
-            if (!aptoComprador) return;
-
-            mostrarProgreso(40);
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: "marcarVendido",
-                        id: id.toString(),
-                        comprador_apto: aptoComprador
-                    })
-                });
-                
-                alert("✅ ¡Producto marcado como vendido!");
-                setTimeout(cargarDatosNube, 1500);
-            } catch (err) {
-                console.error(err);
-                alert("Error al conectar con Google Sheets.");
+        function marcarComoVendidoEnSheets(id) {
+            const miApto = document.getElementById('vecino-apto').value.trim() || 'Vecino';
+            if(confirm("¿Seguro que deseas marcar este producto como vendido?")) {
+                ejecutarAccionPost({ action: "marcarVendido", id: id, comprador_apto: miApto });
             }
         }
 
-        async function eliminarProducto(id) {
-            if(confirm("¿Estás seguro de que quieres eliminar esta publicación permanentemente de la vitrina?")) {
-                mostrarProgreso(40);
-                try {
-                    await fetch(API_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: "delete",
-                            id: id.toString()
-                        })
-                    });
-                    alert("🗑️ Solicitud de eliminación enviada a la Base de Datos.");
-                    setTimeout(cargarDatosNube, 1500);
-                } catch (err) {
-                    alert("Error al eliminar.");
-                }
+        function recargarInventarioProducto(id) {
+            const nuevaCant = prompt("¿Cuántas unidades deseas añadir al inventario? (Escribe 999 para ilimitado):", "5");
+            if(nuevaCant) {
+                ejecutarAccionPost({ action: "updateStock", id: id, unidades: parseInt(nuevaCant) });
             }
         }
 
-        async function limpiarTodaLaInfoAdmin() {
-            const pass = prompt("🔐 Función de Administración:\nPor favor ingresa la contraseña para borrar TODOS los productos:");
-            if (pass === null) return;
+        function eliminarProducto(id) {
+            if(confirm("¿Estás completamente seguro de que deseas eliminar permanentemente esta publicación?")) {
+                ejecutarAccionPost({ action: "delete", id: id });
+            }
+        }
 
+        function limpiarTodaLaInfoAdmin() {
+            const pass = prompt("Introduce la clave maestra de administrador:");
             if (pass === CLAVE_ADMIN) {
-                if(confirm("⚠️ ¡ADVERTENCIA CRÍTICA!\n¿Quieres vaciar toda la hoja de cálculo?")) {
-                    mostrarProgreso(30);
-                    try {
-                        await fetch(API_URL, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: "clear_all" })
-                        });
-                        alert("💥 Base de datos limpia.");
-                        setTimeout(cargarDatosNube, 1500);
-                    } catch (err) {
-                        alert("Error de red.");
-                    }
+                if(confirm("⚠️ ¡ADVERTENCIA CRÍTICA! Vas a borrar ABSOLUTAMENTE TODOS los productos del edificio de la base de datos. ¿Proceder?")) {
+                    ejecutarAccionPost({ action: "clear_all" });
                 }
-            } else {
-                alert("❌ Contraseña incorrecta.");
+            } else if (pass !== null) {
+                alert("❌ Clave incorrecta.");
             }
         }
     </script>
