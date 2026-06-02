@@ -452,70 +452,115 @@
             window.open(urlFinal, '_blank');
         }
 
-        async function publicarArticuloNuevo() {
-            const miNombre = document.getElementById('vecino-nombre').value.trim();
-            const miTorre = document.getElementById('vecino-torre').value;
-            const miApto = document.getElementById('vecino-apto').value.trim();
+      async function publicarArticuloNuevo() {
+    // 1. Obtener datos del perfil (Panel izquierdo original)
+    const miNombre = document.getElementById('vecino-nombre').value.trim();
+    const miTorre = document.getElementById('vecino-torre').value;
+    const miApto = document.getElementById('vecino-apto').value.trim();
 
-            if(!miNombre || !miTorre || !miApto) {
-                alert("❌ ERROR: Debes rellenar tus datos de Identificación (Nombre, Torre y Apto) en el panel izquierdo antes de publicar.");
-                return;
-            }
+    if(!miNombre || !miTorre || !miApto) {
+        alert("❌ ERROR: Debes rellenar tus datos de Identificación (Nombre, Torre y Apto) en el panel izquierdo antes de publicar.");
+        return;
+    }
 
-            const nombreProd = document.getElementById('prod-nombre').value.trim();
-            const categoriaProd = document.getElementById('prod-categoria').value;
-            const precioProd = document.getElementById('prod-precio').value.trim();
-            const tipoCupo = document.getElementById('prod-tipo-cupo').value;
-            let unidadesProd = document.getElementById('prod-unidades').value;
-            let whatsappProd = document.getElementById('prod-whatsapp').value.trim();
-            const imagenProd = document.getElementById('prod-imagen').value;
-            const descProd = document.getElementById('prod-descripcion').value.trim();
+    // 2. Obtener datos del producto (Formulario central original)
+    const nombreProd = document.getElementById('prod-nombre').value.trim();
+    const categoriaProd = document.getElementById('prod-categoria').value;
+    const precioProdInput = document.getElementById('prod-precio').value.trim();
+    const precioProd = parseFloat(precioProdInput) || 0;
+    const tipoCupo = document.getElementById('prod-tipo-cupo').value;
+    let unidadesProd = document.getElementById('prod-unidades').value;
+    let whatsappProd = document.getElementById('prod-whatsapp').value.trim();
+    const imagenProd = document.getElementById('prod-imagen').value;
+    const descProd = document.getElementById('prod-descripcion').value.trim();
 
-            if(!nombreProd || precioProd === '') {
-                alert("❌ Por favor, llena al menos el Nombre del producto y el Precio.");
-                return;
-            }
+    if(!nombreProd || precioProdInput === '') {
+        alert("❌ Por favor, llena al menos el Nombre del producto y el Precio.");
+        return;
+    }
 
-            whatsappProd = whatsappProd.replace(/[^0-9]/g, '');
-            if(whatsappProd.length < 8) {
-                alert("❌ El número de WhatsApp no es válido. Recuerda incluir el código de área (ej: 502).");
-                return;
-            }
-            if(!whatsappProd.startsWith('502') && whatsappProd.length === 8) {
-                whatsappProd = '502' + whatsappProd;
-            }
+    // Limpieza y validación local del número de WhatsApp ingresado
+    whatsappProd = whatsappProd.replace(/[^0-9]/g, '');
+    if(whatsappProd.length < 8) {
+        alert("❌ El número de WhatsApp no es válido. Recuerda incluir el código de área (ej: 502).");
+        return;
+    }
+    if(!whatsappProd.startsWith('502') && whatsappProd.length === 8) {
+        whatsappProd = '502' + whatsappProd;
+    }
 
-            if(tipoCupo === 'ilimitado') unidadesProd = "ilimitado";
+    if(tipoCupo === 'ilimitado') unidadesProd = "ilimitado";
 
-            const payload = {
-                action: "create",
-                nombre: nombreProd,
-                descripcion: descProd,
-                precio: parseFloat(precioProd),
-                categoria: categoriaProd,
-                unidades: unidadesProd,
-                imagenUrl: imagenProd,
-                vendedorTorre: miTorre,
-                vendedorApto: miApto,
-                vendedorNombre: miNombre,
-                whatsapp: whatsappProd
-            };
+    // 3. Payload para Google Sheets
+    const payload = {
+        action: "create",
+        nombre: nombreProd,
+        descripcion: descProd,
+        precio: precioProd,
+        categoria: categoriaProd,
+        unidades: unidadesProd,
+        imagenUrl: imagenProd,
+        vendedorTorre: miTorre,
+        vendedorApto: miApto,
+        vendedorNombre: miNombre,
+        whatsapp: whatsappProd
+    };
 
-            mostrarProgreso(50);
-            try {
-                const res = await fetch(API_URL, {
-                    method: "POST",
-                    body: JSON.stringify(payload)
-                });
-                if(!res.ok) throw new Error("Fallo al publicar");
-                alert("🚀 ¡Producto publicado exitosamente!");
-                cargarDatosNube();
-            } catch(err) {
-                alert("❌ Error al conectar con el servidor.");
-            } finally {
-                mostrarProgreso(100);
-            }
+    mostrarProgreso(50);
+    try {
+        const res = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        });
+        if(!res.ok) throw new Error("Fallo al publicar");
+        
+        alert("🚀 ¡Producto publicado exitosamente! Generando plantilla para el grupo de WhatsApp...");
+
+        // 📲 4. CONSTRUCCIÓN DEL MENSAJE PARA EL GRUPO DE WHATSAPP
+        const textoPrecio = precioProd === 0 ? "🎁 ¡GRATIS!" : `Q ${precioProd.toFixed(2)}`;
+        const urlVitrina = "https://fredorozco.github.io/VentasP11/"; // Tu link de GitHub Pages
+        const urlContactoWa = `https://wa.me/${whatsappProd}`;
+        
+        let mensajeCompleto = `🏢 *NUEVO PRODUCTO EN EL MARKETPLACE* 🏢\n\n`;
+        mensajeCompleto += `🛍️ *Producto:* ${nombreProd}\n`;
+        mensajeCompleto += `📦 *Categoría:* ${categoriaProd}\n`;
+        mensajeCompleto += `💰 *Precio:* ${textoPrecio}\n`;
+        mensajeCompleto += `📍 *Ubicación:* ${miTorre} - Apto ${miApto}\n`;
+        mensajeCompleto += `👤 *Vendedor:* ${miNombre}\n`;
+        
+        if (descProd) {
+            mensajeCompleto += `📝 *Detalles:* ${descProd}\n`;
         }
+        
+        mensajeCompleto += `\n🔗 *Entra a ver la vitrina aquí:* ${urlVitrina}\n`;
+        mensajeCompleto += `📱 *Contacto directo para comprar:* ${urlContactoWa}`;
+
+        // Abrir ventana nativa de reenvío de WhatsApp
+        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensajeCompleto)}`;
+        window.open(whatsappUrl, '_blank');
+
+        // 5. Limpieza del formulario central (mantiene la identificación intacta)
+        document.getElementById('prod-nombre').value = '';
+        document.getElementById('prod-precio').value = '';
+        document.getElementById('prod-whatsapp').value = '';
+        document.getElementById('prod-descripcion').value = '';
+        document.getElementById('prod-imagen').value = '';
+        
+        const statusCarga = document.getElementById('status-carga-imagen');
+        if(statusCarga) statusCarga.innerHTML = "Ninguna foto seleccionada";
+        
+        const previewCont = document.getElementById('previsualizacion-contenedor');
+        if(previewCont) previewCont.classList.add('hidden');
+
+        // Refrescar vitrina y tabla de control
+        await cargarDatosNube();
+        
+    } catch(err) {
+        alert("❌ Error al conectar con el servidor.");
+    } finally {
+        mostrarProgreso(100);
+    }
+}
 
         // AGREGADAS FUNCIONES FALTANTES PARA EVITAR FUGAS DE REFERENCE ERROR
        // 🔄 BOTÓN RESTOCK: Suma inventario o cambia el estado a Disponible
